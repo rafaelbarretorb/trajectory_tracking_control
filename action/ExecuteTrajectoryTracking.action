@@ -1,0 +1,22 @@
+### GOAL DEFINITION
+
+# Path Planning
+geometry_msgs/PoseArray path
+
+# Average velocity of the route ([meter]/[second])
+float32 velocity_average
+
+# Sampling time ([second])
+float32 sampling_time
+
+---
+### RESULT DEFINITION
+int32 distance_traveled_percentage
+string mission_status
+
+# Goal distance ([meter])
+float32 goal_distance
+---
+### FEEDBACK DEFINITION
+int32 distance_traveled_percentage
+string mission_status

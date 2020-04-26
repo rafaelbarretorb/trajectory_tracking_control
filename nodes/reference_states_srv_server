@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+
+
+import rospy
+from tf.transformations import quaternion_from_euler
+from geometry_msgs.msg import Pose, Point, PoseArray
+from std_msgs.msg import Int16MultiArray
+import numpy as np
+import math
+
+class ReferenceStatesServer:
+    def __init__(self):
+        self.ccpp_service = rospy.Service("reference_states_generation_srv", ComputeReferenceStates, self.generator_cb)
+
+    def generator_cb(self, req):
+
+        
+
+if __name__ == '__main__':
+    rospy.init_node('reference_states_server')
+    rospy.spin()
