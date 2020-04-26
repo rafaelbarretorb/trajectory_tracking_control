@@ -9,7 +9,13 @@ set(CMAKE_CXX_STANDARD 11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
+    roscpp
+    rospy
+    std_msgs
+    geometry_msgs
+    actionlib
+    actionlib_msgs
+    message_generation
 )
 
 find_package(Eigen3 REQUIRED)
@@ -23,7 +29,7 @@ set(EXTERNAL_INCLUDE_DIRS ${Eigen_INCLUDE_DIRS})
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -57,24 +63,22 @@ set(EXTERNAL_INCLUDE_DIRS ${Eigen_INCLUDE_DIRS})
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files( DIRECTORY srv
+    FILES ComputeReferenceStates.srv
+)
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files( DIRECTORY action
+    FILES ExecuteTrajectoryTracking.action
+)
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+    DEPENDENCIES
+    std_msgs
+    geometry_msgs
+    actionlib_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -106,10 +110,14 @@ set(EXTERNAL_INCLUDE_DIRS ${Eigen_INCLUDE_DIRS})
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES trajectory_tracking_control
+    INCLUDE_DIRS include
     CATKIN_DEPENDS
         roscpp
+        rospy
+        std_msgs
+        geometry_msgs
+        actionlib_msgs
+        actionlib
     DEPENDS
         Eigen3
 )
