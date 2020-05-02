@@ -18,9 +18,10 @@ find_package(catkin REQUIRED COMPONENTS
     message_generation
 )
 
+find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
 
-set(EXTERNAL_INCLUDE_DIRS ${Eigen_INCLUDE_DIRS})
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -110,7 +111,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS include
+    INCLUDE_DIRS
+      include
+      ## This is only necessary because Eigen3 sets a non-standard EIGEN3_INCLUDE_DIR variable
+      ${EIGEN3_INCLUDE_DIR}
     CATKIN_DEPENDS
         roscpp
         rospy
@@ -118,8 +122,8 @@ catkin_package(
         geometry_msgs
         actionlib_msgs
         actionlib
-    DEPENDS
-        Eigen3
+    # DEPENDS
+    #     Eigen3
 )
 
 ###########
@@ -131,6 +135,9 @@ catkin_package(
 include_directories(
     include
     ${catkin_INCLUDE_DIRS}
+
+    # Set manually because Eigen sets a non standard INCLUDE DIR
+    ${Eigen3_INCLUDE_DIRS}
 )
 
 # Declare a C++ library
@@ -146,7 +153,11 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(test src/test_node.cpp)
+add_executable(
+  trajectory_tracking_control
+  src/controller_node.cpp
+  src/controller.cpp
+)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -159,7 +170,7 @@ add_executable(test src/test_node.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(test  ${catkin_LIBRARIES})
+target_link_libraries(trajectory_tracking_control  ${catkin_LIBRARIES})
 
 #############
 ## Install ##

@@ -22,3 +22,6 @@ float32 sampling_time
 
 # Data organized in row-major order, starting with (0,0)
 std_msgs/Float32MultiArray data
+
+int32 row_size
+int32 column_size
