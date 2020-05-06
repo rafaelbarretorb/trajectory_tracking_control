@@ -8,11 +8,12 @@
 
 // Messages
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Twist.h>
 #include <std_msgs/Float32MultiArray.h>
 
 // Eigen
-#include <Eigen/Core>
-
+// #include <Eigen/Core>
+#include <eigen3/Eigen/Core>
 // Action
 #include <actionlib/server/simple_action_server.h>
 #include <trajectory_tracking_control/ExecuteTrajectoryTrackingAction.h>
@@ -40,6 +41,10 @@ class Controller {
   void executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
   void requestReferenceMatrix(const geometry_msgs::PoseArray &path, double vel_avg, double t_sampling);
+
+  bool isGoalReached();
+
+  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel); //NOLINT
 
  protected:
   std::string action_name_;

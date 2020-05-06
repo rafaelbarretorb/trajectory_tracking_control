@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 # Copyright 2020
 
@@ -5,12 +6,10 @@ import numpy as np
 import math
 from scipy import interpolate
 
-class ReferenceState():
-
-	def __init__(self, path, vel_avg, t_s):
+class ReferenceStates():
     """
     A class used to generate the reference states of the trajectory
-	tracking control algorithm.
+    tracking control algorithm.
 
     ...
 
@@ -21,22 +20,25 @@ class ReferenceState():
     vel_avg : float
         the average velocity of the trajectory
     t_s : float
-    	the sampling time
+        the sampling time
 
     Methods
     -------
     bspline(cv, n=100, degree=3, periodic=False)
-    	Generate the trajectory using a B-Spline interpolation.
+        Generate the trajectory using a B-Spline interpolation.
     """
-		self.path = path
-		self.vel_avg = vel_avg
+    def __init__(self, path, vel_avg, t_s):
+        self.path = path
+        self.vel_avg = vel_avg
+
+        self.rows_size = 6
+        self.columns_size = 0
  
     def trajectory_length(self):
         """ ."""
-
         length = 0.0
         for i in range(len(self.path) - 1):
-            dist = distance(self.path[i][0], self.path[i][1], self.path[i+1][0], self.path[i+1][1])
+            dist = self.distance(self.path[i][0], self.path[i][1], self.path[i+1][0], self.path[i+1][1])
             length = length + dist
         
         return length
@@ -51,8 +53,8 @@ class ReferenceState():
 
         traj_duration = traj_length/self.avg_vel
 
-		# distance step = Velocity_avg * Sampling_time	
-		dist_step = self.vel_avg*self.t_s
+        # distance step = Velocity_avg * Sampling_time	
+        dist_step = self.vel_avg*self.t_s
 
         # Spline Size
         traj_size = int(traj_length/dist_step)
@@ -69,7 +71,9 @@ class ReferenceState():
         ddx = np.gradient(dx)/np.gradient(time)
         ddy = np.gradient(dy)/np.gradient(time)
 
-        return states_ref = np.vstack((x, y, dx, dy, ddx, ddy))
+        states_ref = np.vstack((x, y, dx, dy, ddx, ddy))
+
+        return states_ref
 
 
     def bspline(self, cv, n=100, degree=3, periodic=False):
@@ -80,6 +84,8 @@ class ReferenceState():
             degree:   Curve degree
             periodic: True - Curve is closed
                     False - Curve is open
+            
+            output = np.array([])
         """
         # If periodic, extend the point array by count+degree+1
         cv = np.asarray(cv)
@@ -111,3 +117,11 @@ class ReferenceState():
 	def distance(self, x1, y1, x2, y2):
 		""" Euclidean distance between two points (x1,y1) and (x2,y2)."""
 		return math.sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2))
+    
+    def get_columns_size(self):
+        """."""
+        return self.columns_size
+
+    def get_rows_size(self):
+        """."""
+        return self.rows_size

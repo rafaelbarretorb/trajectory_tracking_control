@@ -1,21 +1,52 @@
 #!/usr/bin/env python
 
-
 import rospy
-from tf.transformations import quaternion_from_euler
-from geometry_msgs.msg import Pose, Point, PoseArray
-from std_msgs.msg import Int16MultiArray
-import numpy as np
-import math
+from std_msgs.msg import Float32MultiArray
+
+from trajectory_tracking_control import ReferenceStates
+from trajectory_tracking_control.srv import ComputeReferenceStates, ComputeReferenceStatesResponse
 
 class ReferenceStatesServer:
     def __init__(self):
-        self.ccpp_service = rospy.Service("reference_states_generation_srv", ComputeReferenceStates, self.generator_cb)
+        self.ref_service = rospy.Service("reference_states_generation_srv", ComputeReferenceStates, self.generator_cb)
 
     def generator_cb(self, req):
 
+        rospy.loginfo("Request inputs: ")
+        rospy.loginfo("Path planning with size: %d" % len(req.path.poses))
+        rospy.loginfo("Average Velocity in m/s: %f " % req.average_velocity)
+        rospy.loginfo("Sampling time in s: %d" % req.sampling_time)
+
+        ref_states = ReferenceStates(req.path, req.average_velocity, req.sampling_time)
+        matrix_ref_states = ref_states.compute_reference_states()
+
+        response = ComputeReferenceStatesResponse()
         
+        # Data
+        response.data = self.make_multi_array()
+
+        # Rows size
+        response.rows_size = ref_states.get_rows_size()
+
+        # Columns size
+        response.columns_size = ref_states.get_columns_size()
+
+        return response
+
+    def make_multi_array(self, matrix):
+        """ Convert a numpy 2D array into message ROS Float32MultiArray."""
+        multi_array = Float32MultiArray()
+
+        [rows, columns] = matrix.shape
+
+        for row in range(rows):
+            for column in range(columns):
+                multi_array.data.append(matrix[row][column])
+
+        return multi_array
+
 
 if __name__ == '__main__':
     rospy.init_node('reference_states_server')
+    ReferenceStatesServer()
     rospy.spin()

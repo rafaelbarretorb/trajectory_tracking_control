@@ -13,6 +13,22 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   requestReferenceMatrix(goal->path, goal->velocity_average, goal->sampling_time);
+
+  while (ros::ok() || isGoalReached()) {
+
+  //   if (computeVelocityCommands()) {
+  //     // Publish cmd_vel
+
+  //   } else {
+  //     ROS_DEBUG("The controller could not find a valid plan.");
+  //   }
+
+  }
+}
+
+bool Controller::isGoalReached() {
+  // TODO(BARRETO)
+  return false;
 }
 
 void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, double vel_avg, double t_sampling) {
@@ -28,8 +44,8 @@ void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, do
   if (ref_states_srv_.call(srv)) {
     // get the service response
     ref_states_arr = srv.response.data;
-    matrix_rows_size = srv.response.row_size;
-    matrix_columns_size = srv.response.column_size;
+    matrix_rows_size = srv.response.rows_size;
+    matrix_columns_size = srv.response.columns_size;
 
   } else {
     ROS_ERROR("Failed to call service Coverage Path Planning");
