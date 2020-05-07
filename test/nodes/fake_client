@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+import rospy
+from std_msgs.msg import Float32MultiArray
+from geometry_msgs.msg import PoseArray, Pose
+from tf.transformations import quaternion_from_euler
+
+import numpy as np
+
+from trajectory_tracking_control import ReferenceStates
+from trajectory_tracking_control.srv import ComputeReferenceStates, ComputeReferenceStatesRequest
+
+class FakeClient():
+    def __init__(self):
+        
+        # Service Request
+        rospy.wait_for_service('reference_states_generation_srv')
+        response = rospy.ServiceProxy('reference_states_generation_srv', ComputeReferenceStates)
+
+        test_points = np.array([[ 50.,  25.], [ 59.,  12.], [ 50.,  10.], [ 57.,   2.], [ 40.,   4.], [ 40.,   14.]])
+
+        request = ComputeReferenceStatesRequest()
+
+        # Goal
+        request.average_velocity = 0.5
+        request.sampling_time = 0.1
+        request.path = self.make_path(test_points)
+
+        result = response(request)
+
+        rospy.loginfo("Data size: %d" % len(result.data.data))
+        rospy.loginfo("Rows size: %d" % len(result.rows_size))
+        rospy.loginfo("Columns size: %d" % len(result.columns_size))
+
+
+    def make_path(self, points):
+        """ Convert a numpy 2D array into ROS message PoseArray."""
+        path = PoseArray()
+        for point in points:
+            pose = self.pose_2d_to_ros_pose(*point)
+            path.poses.append(pose)
+
+        return path
+    
+    def pose_2d_to_ros_pose(self, *my_pose):
+        """ Convert [x,y,yaw] into ROS geometry_msgs/Pose message"""
+
+        pose = Pose()
+        pose.position.x = my_pose[0]
+        pose.position.y = my_pose[1]
+        pose.position.z = 0.0
+
+        try:
+            yaw = my_pose[2]
+        except:
+            yaw = 0.0
+
+        quat = quaternion_from_euler(0.0, 0.0, yaw)
+
+        pose.orientation.x = quat[0]
+        pose.orientation.y = quat[1]
+        pose.orientation.z = quat[2]
+        pose.orientation.w = quat[3]
+
+        return pose
+
+if __name__ == "__main__":
+    rospy.init_node('ref_state_fake_client')
+    FakeClient()
+    rospy.spin()

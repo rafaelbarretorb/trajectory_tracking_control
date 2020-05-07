@@ -2,6 +2,7 @@
 
 import rospy
 from std_msgs.msg import Float32MultiArray
+from geometry_msgs.msg import PoseArray, Pose
 
 from trajectory_tracking_control import ReferenceStates
 from trajectory_tracking_control.srv import ComputeReferenceStates, ComputeReferenceStatesResponse
@@ -13,9 +14,11 @@ class ReferenceStatesServer:
     def generator_cb(self, req):
 
         rospy.loginfo("Request inputs: ")
-        rospy.loginfo("Path planning with size: %d" % len(req.path.poses))
-        rospy.loginfo("Average Velocity in m/s: %f " % req.average_velocity)
-        rospy.loginfo("Sampling time in s: %d" % req.sampling_time)
+        # rospy.loginfo("Path planning with size: %d" % len(req.path.poses))
+        # rospy.loginfo("Average Velocity in m/s: %f " % req.average_velocity)
+        # rospy.loginfo("Sampling time in s: %d" % req.sampling_time)
+
+        # TODO make path list
 
         ref_states = ReferenceStates(req.path, req.average_velocity, req.sampling_time)
         matrix_ref_states = ref_states.compute_reference_states()
@@ -34,7 +37,7 @@ class ReferenceStatesServer:
         return response
 
     def make_multi_array(self, matrix):
-        """ Convert a numpy 2D array into message ROS Float32MultiArray."""
+        """ Convert a numpy 2D array into ROS message Float32MultiArray."""
         multi_array = Float32MultiArray()
 
         [rows, columns] = matrix.shape
