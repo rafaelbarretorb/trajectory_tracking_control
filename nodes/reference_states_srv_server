@@ -8,25 +8,31 @@ from trajectory_tracking_control import ReferenceStates
 from trajectory_tracking_control.srv import ComputeReferenceStates, ComputeReferenceStatesResponse
 
 class ReferenceStatesServer:
+    """ .
+    """
     def __init__(self):
         self.ref_service = rospy.Service("reference_states_generation_srv", ComputeReferenceStates, self.generator_cb)
 
     def generator_cb(self, req):
 
         rospy.loginfo("Request inputs: ")
-        # rospy.loginfo("Path planning with size: %d" % len(req.path.poses))
-        # rospy.loginfo("Average Velocity in m/s: %f " % req.average_velocity)
-        # rospy.loginfo("Sampling time in s: %d" % req.sampling_time)
+        rospy.loginfo("Path planning with size: %d" % len(req.path.poses))
+        rospy.loginfo("Average Velocity in m/s: %f " % req.average_velocity)
+        rospy.loginfo("Sampling time in s: %f" % req.sampling_time)
 
         # TODO make path list
 
-        ref_states = ReferenceStates(req.path, req.average_velocity, req.sampling_time)
+        path = self.from_pose_array_to_list(req.path)
+
+        ref_states = ReferenceStates(path, req.average_velocity, req.sampling_time)
         matrix_ref_states = ref_states.compute_reference_states()
 
         response = ComputeReferenceStatesResponse()
-        
+
+        print matrix_ref_states
+
         # Data
-        response.data = self.make_multi_array()
+        response.data = self.make_multi_array(matrix_ref_states)
 
         # Rows size
         response.rows_size = ref_states.get_rows_size()
@@ -35,6 +41,17 @@ class ReferenceStatesServer:
         response.columns_size = ref_states.get_columns_size()
 
         return response
+
+    def from_pose_array_to_list(self, pose_array):
+        """ ."""
+        path_list = list()
+
+        for i in range(len(pose_array.poses)):
+            path_list.append([pose_array.poses[i].position.x,
+                              pose_array.poses[i].position.y])
+            print path_list[-1]
+
+        return path_list
 
     def make_multi_array(self, matrix):
         """ Convert a numpy 2D array into ROS message Float32MultiArray."""

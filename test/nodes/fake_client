@@ -10,6 +10,8 @@ import numpy as np
 from trajectory_tracking_control import ReferenceStates
 from trajectory_tracking_control.srv import ComputeReferenceStates, ComputeReferenceStatesRequest
 
+import matplotlib.pyplot as plt
+
 class FakeClient():
     def __init__(self):
         
@@ -17,7 +19,7 @@ class FakeClient():
         rospy.wait_for_service('reference_states_generation_srv')
         response = rospy.ServiceProxy('reference_states_generation_srv', ComputeReferenceStates)
 
-        test_points = np.array([[ 50.,  25.], [ 59.,  12.], [ 50.,  10.], [ 57.,   2.], [ 40.,   4.], [ 40.,   14.]])
+        test_points = [[ 50.,  25.], [ 59.,  12.], [ 50.,  10.], [ 57.,   2.], [ 40.,   4.], [ 40.,   14.]]
 
         request = ComputeReferenceStatesRequest()
 
@@ -29,9 +31,27 @@ class FakeClient():
         result = response(request)
 
         rospy.loginfo("Data size: %d" % len(result.data.data))
-        rospy.loginfo("Rows size: %d" % len(result.rows_size))
-        rospy.loginfo("Columns size: %d" % len(result.columns_size))
+        rospy.loginfo("Rows size: %d" % result.rows_size)
+        rospy.loginfo("Columns size: %d" % result.columns_size)
 
+        x,y = self.get_x_y(result.data, result.rows_size, result.columns_size)
+        plt.plot(x,y)
+        x, y = zip(*test_points)
+        plt.scatter(x,y)
+        plt.show()
+    
+    def get_x_y(self, multi_array, rows_size, columns_size):
+
+        x = list()
+        y = list()
+        
+        for i in range(columns_size):
+            x.append(multi_array.data[i])
+
+        for i in range(columns_size, 2*columns_size):
+            y.append(multi_array.data[i])
+        
+        return x,y
 
     def make_path(self, points):
         """ Convert a numpy 2D array into ROS message PoseArray."""
