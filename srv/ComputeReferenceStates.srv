@@ -1,12 +1,12 @@
 ### GOAL DEFINITION
 
-# Path Planning
+#1 Path Planning
 geometry_msgs/PoseArray path
 
-# Average velocity of the route ([meter]/[second])
+#2 Average velocity of the route ([meter]/[second])
 float32 average_velocity
 
-# Sampling time ([second])
+#3 Sampling time ([second])
 float32 sampling_time
 ---
 ### RESULT DEFINITION
@@ -20,8 +20,11 @@ float32 sampling_time
 # |   ddx  |
 # |   ddy  |
 
-# Data organized in row-major order, starting with (0,0)
+#1 Data organized in row-major order, starting with (0,0)
 std_msgs/Float32MultiArray data
 
+#2 Matrix number of rows
 int32 rows_size
+
+#3 Matrix number of columns
 int32 columns_size
