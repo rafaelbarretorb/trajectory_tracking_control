@@ -12,6 +12,11 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
 
   // Initialize matrices
 
+  q_ref_ = MatrixXd(3, 1);
+  q_curr_ = MatrixXd(3, 1);
+  tf_to_global_ = MatrixXd(3, 3);
+  error_ = MatrixXd(3, 1);
+
   // Posture error e(t)
   MatrixXd
 
@@ -43,17 +48,52 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   double omega;
   double vel;
 
-  q_curr_ << robot_pose_.position.x, robot_pose_.position.y, getYawFromQuaternion(robot_pose_.orientation);
+  x_ref_ = ref_states_matrix_(0, time_idx);
+  y_ref_ = ref_states_matrix_(1, time_idx);
+  dx_ref_ = ref_states_matrix_(2, time_idx);
+  dy_ref_ = ref_states_matrix_(3, time_idx);
+  ddx_ref_ = ref_states_matrix_(4, time_idx);
+  ddy_ref_ = ref_states_matrix_(5, time_idx);
+
+  yaw_ref_ = atan2(dy_ref_, dx_ref_);
+
+  q_ref_ << x_ref_, y_ref_, yaw_ref_;
+
+  // Publish reference pose
+  // TODO(BARRETO)
+
+  yaw_curr_ = getYawFromQuaternion(robot_pose_.orientation);
+
+  q_curr_ << robot_pose_.position.x, robot_pose_.position.y, yaw_curr_;
+
+  vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+
+
+  tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
+                   -sin(yaw_curr_), cos(yaw_curr_), 0.0,
+                   0.0, 0.0, 1.0;
+
+  // Posture Error
+  error_ = tf_to_global_ * (q_curr_ - q_ref_);
+
+  // Wrap to PI yaw error
+  error_(2, 0) = angles::normalize_angle(error_(2, 0));
+
+  // Control
+  error_x_ = error_(0, 0);
+  error_x_ = error_(1, 0);
+  error_yaw_ = error_(2, 0);
 
   // TODO(BARRETO) Hard coding for now
   g_ = 1.5;
   zeta_ = 45;
 
+  k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  k_y_ = g_*vel_ref_;
+  k_yaw_ = k_x_;
 
-  
-
-  vel = vel_ref_ * cos(error_yaw_) + k_x_*error_x_;
-  omega = omega_ref_ + k_y_ * error_y_ + k_yaw_ * error_yaw_;
+  vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
+  omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
 
   // Ensure that the linear velocity does not exceed the maximum allowed
   if (vel > vel_max_) {

@@ -11,6 +11,9 @@
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float32MultiArray.h>
 
+// Angles
+#include <angles/angles.h>
+
 // TF2
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
@@ -93,7 +96,12 @@ class Controller {
   // Current reference velocities
   double vel_ref_, omega_ref_;
 
-  // 
+  // Current reference state
+  double x_ref_, y_ref_, dx_ref_, dy_ref_, ddx_ref_, ddy_ref_;
+
+  // Yaw angle
+  double yaw_ref_, yaw_curr_;
+
   ros::ServiceClient ref_states_srv_;
 };
 };  // namespace trajectory_tracking_control
