@@ -10,6 +10,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <nav_msgs/Odometry.h>
 
 // Angles
 #include <angles/angles.h>
@@ -53,9 +54,13 @@ class Controller {
 
   bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time_idx); //NOLINT
 
-  void updateCurrentPose();
+  void updateCurrentPoseCB(const nav_msgs::Odometry & msg);
 
   double getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg);
+
+  void getRobotPoseFromTF2();
+
+  double euclideanDistance(double x1, double y1, double x2, double y2);
 
  protected:
   std::string action_name_;
@@ -103,6 +108,12 @@ class Controller {
   double yaw_ref_, yaw_curr_;
 
   ros::ServiceClient ref_states_srv_;
+
+  ros::Subscriber pose_sub_;
+
+  geometry_msgs::Point goal_position_;
+
+  ros::Publisher ref_pose_pub_;
 };
 };  // namespace trajectory_tracking_control
 

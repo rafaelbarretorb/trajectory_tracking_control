@@ -17,15 +17,20 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
   tf_to_global_ = MatrixXd(3, 3);
   error_ = MatrixXd(3, 1);
 
-  // Posture error e(t)
-  MatrixXd
+  pose_sub_ = nh_.subscribe("/odometry/filtered", 100, &Controller::updateCurrentPoseCB, this);
 
+  ref_pose_pub_ = nh_.advertise<"reference_pose">()
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
+  // Set goal position
+  goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
+  goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
+
+  // Request Reference Matrix
   requestReferenceMatrix(goal->path, goal->velocity_average, goal->sampling_time);
 
-  while (ros::ok() || isGoalReached()) {
+  while (ros::ok() && !isGoalReached()) {
 
   //   if (computeVelocityCommands()) {
   //     // Publish cmd_vel
@@ -38,11 +43,27 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
 }
 
 bool Controller::isGoalReached() {
-  // TODO(BARRETO)
-  return false;
+  double distance = euclideanDistance(goal_position_.x, goal_position_.y,
+                                      robot_pose_.position.x, robot_pose_.position.y);
+  // TODO(BARRETO) remove after, hard coding
+  double tolerance = 0.2;
+
+  if (distance < tolerance) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
-void Controller::updateCurrentPose() {}
+void Controller::updateCurrentPoseCB(const nav_msgs::Odometry & msg) {
+  robot_pose_.position.x = msg.pose.pose.position.x;
+  robot_pose_.position.y = msg.pose.pose.position.y;
+
+  robot_pose_.orientation.x = msg.pose.pose.orientation.x;
+  robot_pose_.orientation.y = msg.pose.pose.orientation.y;
+  robot_pose_.orientation.z = msg.pose.pose.orientation.z;
+  robot_pose_.orientation.w = msg.pose.pose.orientation.w;
+}
 
 bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time_idx) {
   double omega;
@@ -150,4 +171,11 @@ double Controller::getYawFromQuaternion(const geometry_msgs::Quaternion & quat_m
 
   return yaw;
 }
+
+void Controller::getRobotPoseFromTF2() {}
+
+double Controller::euclideanDistance(double x1, double y1, double x2, double y2) {
+  return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+}
+
 }  // namespace trajectory_tracking_control
