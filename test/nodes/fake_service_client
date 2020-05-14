@@ -87,4 +87,3 @@ class FakeClient():
 if __name__ == "__main__":
     rospy.init_node('ref_state_fake_client')
     FakeClient()
-    rospy.spin()

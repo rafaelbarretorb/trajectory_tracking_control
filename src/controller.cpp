@@ -19,10 +19,15 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
 
   pose_sub_ = nh_.subscribe("/odometry/filtered", 100, &Controller::updateCurrentPoseCB, this);
 
-  ref_pose_pub_ = nh_.advertise<"reference_pose">()
+  ref_pose_pub_ = nh_.advertise<nav_msgs::Odometry>("reference_pose", 1, true);
+  cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10, true);
+
+  ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
+  // Set goal reached false
+  goal_reached_ = false;
   // Set goal position
   goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
   goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
@@ -30,15 +35,33 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   // Request Reference Matrix
   requestReferenceMatrix(goal->path, goal->velocity_average, goal->sampling_time);
 
-  while (ros::ok() && !isGoalReached()) {
 
-  //   if (computeVelocityCommands()) {
-  //     // Publish cmd_vel
+  geometry_msgs::Twist cmd_vel;
+  int n;
 
-  //   } else {
-  //     ROS_DEBUG("The controller could not find a valid plan.");
-  //   }
+  // ROS Time
+  ros::Time zero_time;
+  ros::Duration delta_t;
+  double delta_t_sec;
 
+  while (ros::ok() && !goal_reached_) {
+    delta_t = ros::Time::now() - zero_time;
+    delta_t_sec = delta_t.toSec();
+
+
+    // TO TEST
+    if (delta_t_sec > 5.2) {
+      goal_reached_ = true;
+      ROS_INFO("Time: %lf", delta_t_sec);
+    }
+
+    // if (computeVelocityCommands(cmd_vel, n)) {
+    //   // Publish cmd_vel
+    //   cmd_vel_pub_.publish(cmd_vel);
+
+    // } else {
+    //   ROS_DEBUG("The controller could not find a valid velocity command.");
+    // }
   }
 }
 
@@ -49,9 +72,9 @@ bool Controller::isGoalReached() {
   double tolerance = 0.2;
 
   if (distance < tolerance) {
-    return true;
+    goal_reached_ = true;
   } else {
-    return false;
+    goal_reached_ = false;
   }
 }
 
@@ -81,7 +104,7 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   q_ref_ << x_ref_, y_ref_, yaw_ref_;
 
   // Publish reference pose
-  // TODO(BARRETO)
+  publishReferencePose(x_ref_, y_ref_, yaw_ref_);
 
   yaw_curr_ = getYawFromQuaternion(robot_pose_.orientation);
 
@@ -176,6 +199,25 @@ void Controller::getRobotPoseFromTF2() {}
 
 double Controller::euclideanDistance(double x1, double y1, double x2, double y2) {
   return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+}
+
+void Controller::publishReferencePose(double x, double y, double yaw) {
+  geometry_msgs::PoseStamped pose;
+  pose.header.frame_id = "map";
+  pose.pose.position.x = x;
+  pose.pose.position.x = y;
+  pose.pose.position.z = 0.0;
+
+  tf2::Quaternion quat_tf;
+  geometry_msgs::Quaternion quat_msg;
+
+  quat_tf.setRPY(0, 0, yaw);
+  tf2::convert(quat_msg , quat_tf);
+
+  // Set orientation
+  pose.pose.orientation = quat_msg;
+
+  ref_pose_pub_.publish(pose);
 }
 
 }  // namespace trajectory_tracking_control

@@ -11,7 +11,7 @@ class ReferenceStatesServer:
     """ .
     """
     def __init__(self):
-        self.ref_service = rospy.Service("reference_states_generation_srv", ComputeReferenceStates, self.generator_cb)
+        self.ref_service = rospy.Service("ref_states_srv", ComputeReferenceStates, self.generator_cb)
 
     def generator_cb(self, req):
 

@@ -6,8 +6,10 @@
 
 #include <ros/ros.h>
 
+
 // Messages
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <nav_msgs/Odometry.h>
@@ -18,6 +20,7 @@
 // TF2
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 // Eigen
 // #include <Eigen/Core>
@@ -31,6 +34,7 @@
 
 #include <vector>
 #include <string>
+#include <cmath>
 
 #include <boost/bind.hpp>
 
@@ -61,6 +65,8 @@ class Controller {
   void getRobotPoseFromTF2();
 
   double euclideanDistance(double x1, double y1, double x2, double y2);
+
+  void publishReferencePose(double x, double y, double yaw);
 
  protected:
   std::string action_name_;
@@ -114,6 +120,10 @@ class Controller {
   geometry_msgs::Point goal_position_;
 
   ros::Publisher ref_pose_pub_;
+
+  ros::Publisher cmd_vel_pub_;
+
+  bool goal_reached_;
 };
 };  // namespace trajectory_tracking_control
 
