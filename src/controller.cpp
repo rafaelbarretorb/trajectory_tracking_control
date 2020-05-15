@@ -23,36 +23,42 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10, true);
 
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
+
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
+  ROS_INFO("########### TEST 1 ###########");
   // Set goal reached false
   goal_reached_ = false;
   // Set goal position
   goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
   goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
 
-  // Request Reference Matrix
-  requestReferenceMatrix(goal->path, goal->velocity_average, goal->sampling_time);
+  ROS_INFO("########### TEST 2 ###########");
 
+  // Request Reference Matrix
+  requestReferenceMatrix(goal->path, goal->average_velocity, goal->sampling_time);
+ROS_INFO("AVG Vel: %f", goal->average_velocity);
+  ROS_INFO("########### TEST 3 ###########");
 
   geometry_msgs::Twist cmd_vel;
   int n;
 
+  ros::Rate rate(10);
+
   // ROS Time
-  ros::Time zero_time;
+  ros::Time zero_time = ros::Time::now();
   ros::Duration delta_t;
   double delta_t_sec;
 
   while (ros::ok() && !goal_reached_) {
     delta_t = ros::Time::now() - zero_time;
     delta_t_sec = delta_t.toSec();
-
+    ROS_INFO("Time: %lf", delta_t_sec);
 
     // TO TEST
     if (delta_t_sec > 5.2) {
       goal_reached_ = true;
-      ROS_INFO("Time: %lf", delta_t_sec);
     }
 
     // if (computeVelocityCommands(cmd_vel, n)) {
@@ -62,6 +68,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     // } else {
     //   ROS_DEBUG("The controller could not find a valid velocity command.");
     // }
+    rate.sleep();
   }
 }
 

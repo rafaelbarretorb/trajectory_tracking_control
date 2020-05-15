@@ -2,6 +2,6 @@
 
 <launch>
     <!-- fake client launch file -->
-    <node pkg="trajectory_tracking_control" type="fake_client" name="ref_state_fake_client"  output="screen">
+    <node pkg="trajectory_tracking_control" type="fake_action_client" name="fake_action_client"  output="screen">
     </node>
 </launch>

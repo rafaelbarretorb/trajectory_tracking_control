@@ -4,7 +4,7 @@
 geometry_msgs/PoseArray path
 
 # Average velocity of the route ([meter]/[second])
-float32 velocity_average
+float32 average_velocity
 
 # Sampling time ([second])
 float32 sampling_time

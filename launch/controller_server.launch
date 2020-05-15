@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- path server launch file -->
+    <node pkg="trajectory_tracking_control" type="trajectory_tracking_control" name="trajectory_control"  output="screen">
+    </node>
+</launch>
