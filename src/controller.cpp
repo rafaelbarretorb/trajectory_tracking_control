@@ -27,23 +27,20 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
-  ROS_INFO("########### TEST 1 ###########");
   // Set goal reached false
   goal_reached_ = false;
   // Set goal position
   goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
   goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
 
-  ROS_INFO("########### TEST 2 ###########");
-
   // Request Reference Matrix
   requestReferenceMatrix(goal->path, goal->average_velocity, goal->sampling_time);
-ROS_INFO("AVG Vel: %f", goal->average_velocity);
-  ROS_INFO("########### TEST 3 ###########");
 
   geometry_msgs::Twist cmd_vel;
   int n;
+  double step = goal_distance_/ref_states_matrix_.cols();
 
+  // TODO(BARRETO) rate not constant?
   ros::Rate rate(10);
 
   // ROS Time
@@ -54,22 +51,39 @@ ROS_INFO("AVG Vel: %f", goal->average_velocity);
   while (ros::ok() && !goal_reached_) {
     delta_t = ros::Time::now() - zero_time;
     delta_t_sec = delta_t.toSec();
-    ROS_INFO("Time: %lf", delta_t_sec);
 
-    // TO TEST
-    if (delta_t_sec > 5.2) {
-      goal_reached_ = true;
+    n = round(delta_t_sec/(goal->sampling_time));
+    if (n > ref_states_matrix_.cols() - 1) {
+      n = ref_states_matrix_.cols() - 1;
     }
 
-    // if (computeVelocityCommands(cmd_vel, n)) {
-    //   // Publish cmd_vel
-    //   cmd_vel_pub_.publish(cmd_vel);
+    if (computeVelocityCommands(cmd_vel, n)) {
+      // Publish cmd_vel
+      cmd_vel_pub_.publish(cmd_vel);
 
-    // } else {
-    //   ROS_DEBUG("The controller could not find a valid velocity command.");
-    // }
+    } else {
+      ROS_DEBUG("The controller could not find a valid velocity command.");
+    }
+
+    // Feedback
+    feedback_.mission_status = "PROGRESS";
+    feedback_.distance_traveled_percentage = 100*n*step/goal_distance_;
+    as_.publishFeedback(feedback_);
+
     rate.sleep();
   }
+
+  if (goal_distance_) {
+    result_.distance_traveled_percentage = feedback_.distance_traveled_percentage;
+    result_.mission_status = "SUCCEED";
+    ROS_INFO("%s: Succeeded", action_name_.c_str());
+    as_.setSucceeded(result_);
+  }
+
+  // Stop the robot
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  cmd_vel_pub_.publish(cmd_vel);
 }
 
 bool Controller::isGoalReached() {
@@ -175,6 +189,7 @@ void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, do
     ref_states_arr = srv.response.data;
     matrix_rows_size = srv.response.rows_size;
     matrix_columns_size = srv.response.columns_size;
+    goal_distance_ = srv.response.goal_distance;
 
   } else {
     ROS_ERROR("Failed to call service Coverage Path Planning");

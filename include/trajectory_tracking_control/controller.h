@@ -74,6 +74,9 @@ class Controller {
   ExecuteTrajectoryTrackingActionServer as_;
   std::vector<geometry_msgs::Point> reference_trajectory_;
 
+  ExecuteTrajectoryTrackingFeedback feedback_;
+  ExecuteTrajectoryTrackingResult result_;
+
   // Reference Matrix
   MatrixXd ref_states_matrix_;
 
@@ -122,6 +125,8 @@ class Controller {
   ros::Publisher ref_pose_pub_;
 
   ros::Publisher cmd_vel_pub_;
+
+  double goal_distance_;
 
   bool goal_reached_;
 };

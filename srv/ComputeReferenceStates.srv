@@ -28,3 +28,6 @@ int32 rows_size
 
 #3 Matrix number of columns
 int32 columns_size
+
+#4 Goal distance
+float32 goal_distance

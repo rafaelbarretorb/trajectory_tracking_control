@@ -29,8 +29,6 @@ class ReferenceStatesServer:
 
         response = ComputeReferenceStatesResponse()
 
-        print matrix_ref_states
-
         # Data
         response.data = self.make_multi_array(matrix_ref_states)
 
@@ -39,6 +37,9 @@ class ReferenceStatesServer:
 
         # Columns size
         response.columns_size = ref_states.get_columns_size()
+
+        # Goal distance
+        response.goal_distance = ref_states.get_trajectory_length()
 
         return response
 
@@ -49,7 +50,6 @@ class ReferenceStatesServer:
         for i in range(len(pose_array.poses)):
             path_list.append([pose_array.poses[i].position.x,
                               pose_array.poses[i].position.y])
-            print path_list[-1]
 
         return path_list
 

@@ -35,8 +35,9 @@ class ReferenceStates():
 
         self.rows_size = 6
         self.columns_size = 0
+        self.traj_length = 0.0
 
-    def trajectory_length(self):
+    def compute_trajectory_length(self):
         """ ."""
         length = 0.0
         for i in range(len(self.path) - 1):
@@ -51,15 +52,15 @@ class ReferenceStates():
         data = np.array(self.path)
 
         # Trajectory Length
-        traj_length = self.trajectory_length()
+        self.traj_length = self.compute_trajectory_length()
 
-        traj_duration = traj_length/self.vel_avg
+        traj_duration = self.traj_length/self.vel_avg
 
         # distance step = Velocity_avg*Sampling time
         dist_step = self.vel_avg * self.t_s
 
         # Spline Size
-        traj_size = int(traj_length/dist_step)
+        traj_size = int(self.traj_length/dist_step)
 
         # Spline
         p = self.bspline(data, n=traj_size, degree=3)
@@ -128,3 +129,7 @@ class ReferenceStates():
     def get_rows_size(self):
         """."""
         return self.rows_size
+
+    def get_trajectory_length(self):
+        """."""
+        return self.traj_length
