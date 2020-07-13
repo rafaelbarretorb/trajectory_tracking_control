@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 
 <launch>
-    <!-- path server launch file -->
     <node pkg="trajectory_tracking_control" type="reference_states_srv_server" name="reference_states_server"  output="screen">
     </node>
 </launch>

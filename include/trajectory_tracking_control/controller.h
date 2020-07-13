@@ -68,6 +68,8 @@ class Controller {
 
   void publishReferencePose(double x, double y, double yaw);
 
+  void makeReferencePath();
+
  protected:
   std::string action_name_;
   ros::NodeHandle nh_;
@@ -123,6 +125,7 @@ class Controller {
   geometry_msgs::Point goal_position_;
 
   ros::Publisher ref_pose_pub_;
+  ros::Publisher ref_path_pub_;
 
   ros::Publisher cmd_vel_pub_;
 

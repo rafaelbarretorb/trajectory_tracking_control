@@ -19,11 +19,11 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
 
   pose_sub_ = nh_.subscribe("/odometry/filtered", 100, &Controller::updateCurrentPoseCB, this);
 
-  ref_pose_pub_ = nh_.advertise<nav_msgs::Odometry>("reference_pose", 1, true);
+  ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
+  ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10, true);
 
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
-
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -36,11 +36,14 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   // Request Reference Matrix
   requestReferenceMatrix(goal->path, goal->average_velocity, goal->sampling_time);
 
+  // Publish Reference path TODO(Rafael) here?
+  makeReferencePath();
+
   geometry_msgs::Twist cmd_vel;
   int n;
   double step = goal_distance_/ref_states_matrix_.cols();
 
-  // TODO(BARRETO) rate not constant?
+  // TODO(BARRETO) rate is not constant?
   ros::Rate rate(10);
 
   // ROS Time
@@ -56,6 +59,8 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     if (n > ref_states_matrix_.cols() - 1) {
       n = ref_states_matrix_.cols() - 1;
     }
+
+    ROS_INFO("n = %d", n);
 
     if (computeVelocityCommands(cmd_vel, n)) {
       // Publish cmd_vel
@@ -91,6 +96,7 @@ bool Controller::isGoalReached() {
                                       robot_pose_.position.x, robot_pose_.position.y);
   // TODO(BARRETO) remove after, hard coding
   double tolerance = 0.2;
+  ROS_INFO("Distance %2f distance", distance);
 
   if (distance < tolerance) {
     goal_reached_ = true;
@@ -127,51 +133,57 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   // Publish reference pose
   publishReferencePose(x_ref_, y_ref_, yaw_ref_);
 
-  yaw_curr_ = getYawFromQuaternion(robot_pose_.orientation);
+  ROS_INFO("(x_ref_ , _ref_) = ( %f , %f )", x_ref_, y_ref_);
 
-  q_curr_ << robot_pose_.position.x, robot_pose_.position.y, yaw_curr_;
+  // yaw_curr_ = getYawFromQuaternion(robot_pose_.orientation);
 
-  vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+  // q_curr_ << robot_pose_.position.x, robot_pose_.position.y, yaw_curr_;
+
+  // vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
 
 
-  tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
-                   -sin(yaw_curr_), cos(yaw_curr_), 0.0,
-                   0.0, 0.0, 1.0;
+  // tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
+  //                  -sin(yaw_curr_), cos(yaw_curr_), 0.0,
+  //                  0.0, 0.0, 1.0;
 
-  // Posture Error
-  error_ = tf_to_global_ * (q_curr_ - q_ref_);
+  // // Posture Error
+  // error_ = tf_to_global_ * (q_curr_ - q_ref_);
 
-  // Wrap to PI yaw error
-  error_(2, 0) = angles::normalize_angle(error_(2, 0));
+  // // Wrap to PI yaw error
+  // error_(2, 0) = angles::normalize_angle(error_(2, 0));
 
-  // Control
-  error_x_ = error_(0, 0);
-  error_x_ = error_(1, 0);
-  error_yaw_ = error_(2, 0);
+  // // Control
+  // error_x_ = error_(0, 0);
+  // error_x_ = error_(1, 0);
+  // error_yaw_ = error_(2, 0);
 
-  // TODO(BARRETO) Hard coding for now
-  g_ = 1.5;
-  zeta_ = 45;
+  // // TODO(BARRETO) Hard coding for now
+  // g_ = 1.5;
+  // zeta_ = 45;
 
-  k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  k_y_ = g_*vel_ref_;
-  k_yaw_ = k_x_;
+  // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  // k_y_ = g_*vel_ref_;
+  // k_yaw_ = k_x_;
 
-  vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
-  omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
+  // vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
+  // omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
 
-  // Ensure that the linear velocity does not exceed the maximum allowed
-  if (vel > vel_max_) {
-    vel = vel_max_;
-  }
+  // // Ensure that the linear velocity does not exceed the maximum allowed
+  // if (vel > vel_max_) {
+  //   vel = vel_max_;
+  // }
 
-  // Ensure that the angular velocity does not exceed the maximum allowed
-  if (fabs(omega) > omega_max_) {
-    omega = copysign(omega_max_, omega);
-  }
+  // // Ensure that the angular velocity does not exceed the maximum allowed
+  // if (fabs(omega) > omega_max_) {
+  //   omega = copysign(omega_max_, omega);
+  // }
 
-  cmd_vel.linear.x = vel;
-  cmd_vel.angular.z = omega;
+  // cmd_vel.linear.x = vel;
+  // cmd_vel.angular.z = omega;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+
+  return true;
 }
 
 void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, double vel_avg, double t_sampling) {
@@ -227,7 +239,7 @@ void Controller::publishReferencePose(double x, double y, double yaw) {
   geometry_msgs::PoseStamped pose;
   pose.header.frame_id = "map";
   pose.pose.position.x = x;
-  pose.pose.position.x = y;
+  pose.pose.position.y = y;
   pose.pose.position.z = 0.0;
 
   tf2::Quaternion quat_tf;
@@ -240,6 +252,18 @@ void Controller::publishReferencePose(double x, double y, double yaw) {
   pose.pose.orientation = quat_msg;
 
   ref_pose_pub_.publish(pose);
+}
+
+void Controller::makeReferencePath() {
+  geometry_msgs::PoseArray path;
+
+  for (int i = 0; i < ref_states_matrix_.cols(); ++i) {
+    geometry_msgs::Pose pose;
+    pose.position.x = ref_states_matrix_(0, i);
+    pose.position.y = ref_states_matrix_(1, i);
+    path.poses.push_back(pose);
+  }
+  ref_path_pub_.publish(path);
 }
 
 }  // namespace trajectory_tracking_control
