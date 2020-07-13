@@ -24,6 +24,9 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10, true);
 
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
+
+  vel_max_ = 0.6;
+  omega_max_ = 0.5;
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -52,6 +55,8 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   double delta_t_sec;
 
   while (ros::ok() && !goal_reached_) {
+    isGoalReached();
+
     delta_t = ros::Time::now() - zero_time;
     delta_t_sec = delta_t.toSec();
 
@@ -59,8 +64,6 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     if (n > ref_states_matrix_.cols() - 1) {
       n = ref_states_matrix_.cols() - 1;
     }
-
-    ROS_INFO("n = %d", n);
 
     if (computeVelocityCommands(cmd_vel, n)) {
       // Publish cmd_vel
@@ -96,7 +99,6 @@ bool Controller::isGoalReached() {
                                       robot_pose_.position.x, robot_pose_.position.y);
   // TODO(BARRETO) remove after, hard coding
   double tolerance = 0.2;
-  ROS_INFO("Distance %2f distance", distance);
 
   if (distance < tolerance) {
     goal_reached_ = true;
@@ -133,55 +135,52 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   // Publish reference pose
   publishReferencePose(x_ref_, y_ref_, yaw_ref_);
 
-  ROS_INFO("(x_ref_ , _ref_) = ( %f , %f )", x_ref_, y_ref_);
+  yaw_curr_ = getYawFromQuaternion(robot_pose_.orientation);
 
-  // yaw_curr_ = getYawFromQuaternion(robot_pose_.orientation);
+  q_curr_ << robot_pose_.position.x, robot_pose_.position.y, yaw_curr_;
 
-  // q_curr_ << robot_pose_.position.x, robot_pose_.position.y, yaw_curr_;
+  vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
 
-  // vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+  tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
+                   -sin(yaw_curr_), cos(yaw_curr_), 0.0,
+                   0.0, 0.0, 1.0;
 
+  // Posture Error
+  error_ = tf_to_global_ * (q_ref_ - q_curr_);
 
-  // tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
-  //                  -sin(yaw_curr_), cos(yaw_curr_), 0.0,
-  //                  0.0, 0.0, 1.0;
+  // Wrap to PI yaw error
+  error_(2, 0) = angles::normalize_angle(error_(2, 0));
 
-  // // Posture Error
-  // error_ = tf_to_global_ * (q_curr_ - q_ref_);
+  // Control
+  error_x_ = error_(0, 0);
+  error_y_ = error_(1, 0);
+  error_yaw_ = error_(2, 0);
 
-  // // Wrap to PI yaw error
-  // error_(2, 0) = angles::normalize_angle(error_(2, 0));
+  // TODO(BARRETO) Hard coding for now
+  g_ = 1.5;
+  zeta_ = 45;
 
-  // // Control
-  // error_x_ = error_(0, 0);
-  // error_x_ = error_(1, 0);
-  // error_yaw_ = error_(2, 0);
+  k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  k_y_ = g_*vel_ref_;
+  k_yaw_ = k_x_;
 
-  // // TODO(BARRETO) Hard coding for now
-  // g_ = 1.5;
-  // zeta_ = 45;
+  vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
+  omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
 
-  // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  // k_y_ = g_*vel_ref_;
-  // k_yaw_ = k_x_;
+  // Ensure that the linear velocity does not exceed the maximum allowed
+  if (vel > vel_max_) {
+    vel = vel_max_;
+  }
 
-  // vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
-  // omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
+  // Ensure that the angular velocity does not exceed the maximum allowed
+  if (fabs(omega) > omega_max_) {
+    omega = copysign(omega_max_, omega);
+  }
 
-  // // Ensure that the linear velocity does not exceed the maximum allowed
-  // if (vel > vel_max_) {
-  //   vel = vel_max_;
-  // }
+  cmd_vel.linear.x = vel;
+  cmd_vel.angular.z = omega;
 
-  // // Ensure that the angular velocity does not exceed the maximum allowed
-  // if (fabs(omega) > omega_max_) {
-  //   omega = copysign(omega_max_, omega);
-  // }
-
-  // cmd_vel.linear.x = vel;
-  // cmd_vel.angular.z = omega;
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.angular.z = 0.0;
+  ROS_INFO("Velocity: %f", vel);
 
   return true;
 }
@@ -246,11 +245,11 @@ void Controller::publishReferencePose(double x, double y, double yaw) {
   geometry_msgs::Quaternion quat_msg;
 
   quat_tf.setRPY(0, 0, yaw);
-  tf2::convert(quat_msg , quat_tf);
+  quat_tf.normalize();
+  quat_msg = tf2::toMsg(quat_tf);
 
   // Set orientation
   pose.pose.orientation = quat_msg;
-
   ref_pose_pub_.publish(pose);
 }
 
