@@ -131,6 +131,8 @@ class Controller {
 
   double goal_distance_;
 
+  double vel_old_, vel_ref_old_;
+
   bool goal_reached_;
 };
 };  // namespace trajectory_tracking_control

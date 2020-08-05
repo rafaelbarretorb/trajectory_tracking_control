@@ -21,12 +21,13 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
 
   ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
-  cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10, true);
+  cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
 
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 
-  vel_max_ = 0.6;
-  omega_max_ = 0.5;
+  vel_max_ = 0.50;
+  omega_max_ = 0.4;
+  vel_old_ = 0.0;
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -47,7 +48,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   double step = goal_distance_/ref_states_matrix_.cols();
 
   // TODO(BARRETO) rate is not constant?
-  ros::Rate rate(10);
+  ros::Rate rate(20);
 
   // ROS Time
   ros::Time zero_time = ros::Time::now();
@@ -140,6 +141,11 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   q_curr_ << robot_pose_.position.x, robot_pose_.position.y, yaw_curr_;
 
   vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+  vel_ref_ = vel_ref_old_ - 0.5*(vel_ref_old_ - vel_ref_);
+
+  if (vel_ref_ < 0.0) {
+    vel_ref_ = 0.0;
+  }
 
   tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
                    -sin(yaw_curr_), cos(yaw_curr_), 0.0,
@@ -165,6 +171,8 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   k_yaw_ = k_x_;
 
   vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
+  vel = vel_old_ - 0.5*(vel_old_ - vel);
+
   omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
 
   // Ensure that the linear velocity does not exceed the maximum allowed
@@ -177,8 +185,15 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
     omega = copysign(omega_max_, omega);
   }
 
+  if (vel < 0.0){
+    vel = 0.0;
+  }
+
   cmd_vel.linear.x = vel;
   cmd_vel.angular.z = omega;
+
+  vel_old_ = vel;
+  vel_ref_old_ = vel_ref_;
 
   ROS_INFO("Velocity: %f", vel);
 
