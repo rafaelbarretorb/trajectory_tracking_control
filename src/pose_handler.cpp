@@ -4,6 +4,10 @@
 namespace trajectory_tracking_control {
 PoseHandler::PoseHandler(tf2_ros::Buffer* tf) : tf_(tf), tfl_(*tf_) {
 
+  odom_frame_ = "odom";
+  global_frame_ = "map";
+  robot_base_frame_ = "base_link";
+
 }
 
 const geometry_msgs::Pose &PoseHandler::getRobotPose() {
@@ -52,14 +56,14 @@ void PoseHandler::publishReferencePose(double x, double y, double yaw,
 }
 
 void PoseHandler::makeReferencePath() {
-  geometry_msgs::PoseArray path;
+//   geometry_msgs::PoseArray path;
 
-  for (int i = 0; i < ref_states_matrix_.cols(); ++i) {
-    geometry_msgs::Pose pose;
-    pose.position.x = ref_states_matrix_(0, i);
-    pose.position.y = ref_states_matrix_(1, i);
-    path.poses.push_back(pose);
-  }
-  ref_path_pub_.publish(path);
+//   for (int i = 0; i < ref_states_matrix_.cols(); ++i) {
+//     geometry_msgs::Pose pose;
+//     pose.position.x = ref_states_matrix_(0, i);
+//     pose.position.y = ref_states_matrix_(1, i);
+//     path.poses.push_back(pose);
+//   }
+//   ref_path_pub_.publish(path);
 }
 }  // namespace trajectory_tracking_control

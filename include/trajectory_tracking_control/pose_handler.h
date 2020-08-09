@@ -16,16 +16,6 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
-// Eigen
-// #include <Eigen/Core>
-#include <eigen3/Eigen/Core>
-
-// Action
-#include <actionlib/server/simple_action_server.h>
-#include <trajectory_tracking_control/ExecuteTrajectoryTrackingAction.h>
-
-// Service
-#include <trajectory_tracking_control/ComputeReferenceStates.h>
 
 #include <vector>
 #include <string>
@@ -33,7 +23,6 @@
 
 #include <boost/bind.hpp>
 
-using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
 
@@ -54,9 +43,9 @@ class PoseHandler {
 
  protected:
 
-  const std::string odom_frame_;
-  const std::string global_frame_;
-  const std::string robot_base_frame_;
+  std::string odom_frame_;
+  std::string global_frame_;
+  std::string robot_base_frame_;
 
 	// TF2
 	tf2_ros::Buffer* tf_;
