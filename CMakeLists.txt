@@ -155,8 +155,9 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(
   trajectory_tracking_control
-  src/controller_node.cpp
-  src/controller.cpp
+#   src/controller_node.cpp
+#   src/controller.cpp
+  src/controller_test_node.cpp
 )
 
 ## Rename C++ executable without prefix
