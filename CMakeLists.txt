@@ -16,6 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
     actionlib
     actionlib_msgs
     message_generation
+    tf2
+    tf2_ros
+    tf2_geometry_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS system)
@@ -122,6 +125,9 @@ catkin_package(
         geometry_msgs
         actionlib_msgs
         actionlib
+        tf2
+        tf2_ros
+        tf2_geometry_msgs
     # DEPENDS
     #     Eigen3
 )
@@ -157,7 +163,8 @@ add_executable(
   trajectory_tracking_control
 #   src/controller_node.cpp
 #   src/controller.cpp
-  src/controller_test_node.cpp
+#   src/controller_test_node.cpp
+  src/test_localization.cpp
 )
 
 ## Rename C++ executable without prefix

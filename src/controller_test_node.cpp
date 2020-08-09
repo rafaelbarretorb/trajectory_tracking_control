@@ -11,12 +11,16 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/TransformStamped.h>
 
 // TF2
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
+
 
 // Angles
 #include <angles/angles.h>
@@ -32,10 +36,32 @@
 using Eigen::MatrixXd;
 
 geometry_msgs::Pose robot_pose;
-double A = 2.0;
+double A = 2.5;
 double x_offset = 0.0;
 double y_offset = 0.0;
-double freq = 2*M_PI/60;
+double freq = 2*M_PI/30;
+
+// tf2_ros::Buffer tfBuffer;
+// tf2_ros::TransformListener tfListener(tfBuffer);
+// geometry_msgs::TransformStamped transformStamped;
+
+// void getPoseFromTF() {
+//   try {
+//       transformStamped = tfBuffer.lookupTransform("odom", "base_link", ros::Time(0));
+//   }
+//   catch (tf2::TransformException &ex) {
+//     ROS_WARN("%s",ex.what());
+//     ros::Duration(1.0).sleep();
+//   }
+
+//   robot_pose.position.x = transformStamped.transform.translation.x;
+//   robot_pose.position.y = transformStamped.transform.translation.y;
+
+//   robot_pose.orientation.x = transformStamped.transform.rotation.x;
+//   robot_pose.orientation.y = transformStamped.transform.rotation.y;
+//   robot_pose.orientation.z = transformStamped.transform.rotation.z;
+//   robot_pose.orientation.w = transformStamped.transform.rotation.w;
+// }
 
 void publishReferencePose(double x, double y, double yaw, const ros::Publisher &ref_pose_pub) {
   geometry_msgs::PoseStamped pose;
@@ -82,12 +108,27 @@ void updateCurrentPose(const nav_msgs::Odometry & msg) {
   robot_pose.orientation.z = msg.pose.pose.orientation.z;
   robot_pose.orientation.w = msg.pose.pose.orientation.w;
 
-  ROS_INFO("Curr position (%f , %f)", robot_pose.position.x, robot_pose.position.y);
+}
+
+void updateCurrentPose2(const geometry_msgs::PoseWithCovarianceStamped & msg) {
+  // robot_pose.position.x = msg.pose.pose.position.x;
+  // robot_pose.position.y = msg.pose.pose.position.y;
+
+  // robot_pose.orientation.x = msg.pose.pose.orientation.x;
+  // robot_pose.orientation.y = msg.pose.pose.orientation.y;
+  // robot_pose.orientation.z = msg.pose.pose.orientation.z;
+  // robot_pose.orientation.w = msg.pose.pose.orientation.w;
+
+  // ROS_INFO("Curr position (%f , %f)", robot_pose.position.x, robot_pose.position.y);
 }
 
 void odomCB(const nav_msgs::Odometry & msg) {
-  // ROS_INFO("Curr position (%f , %f)", msg.pose.pose.orientation.x, msg.pose.pose.orientation.y);
   updateCurrentPose(msg);
+}
+
+void amclCB(const geometry_msgs::PoseWithCovarianceStamped & msg) {
+  // ROS_INFO("Curr position (%f , %f)", msg.pose.pose.orientation.x, msg.pose.pose.orientation.y);
+  updateCurrentPose2(msg);
 }
 
 double getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg) {
@@ -103,7 +144,7 @@ double getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg) {
 int main(int argc, char ** argv) {
   ros::init(argc, argv, "controller_test_ideal_time_scaling");
   ros::NodeHandle nh;
-  ros::Rate rate(20);
+  ros::Rate rate(40);
 
   // Publishers
   ros::Publisher ref_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);;
@@ -111,8 +152,8 @@ int main(int argc, char ** argv) {
   ros::Publisher cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
 
   // Subscribers
-  ros::Subscriber pose_sub = nh.subscribe("/odometry/filtered", 100, &odomCB);
-
+  ros::Subscriber pose_odom_sub = nh.subscribe("/odometry/filtered", 100, &odomCB);
+  ros::Subscriber pose_amcl_sub = nh.subscribe("/amcl", 100, &amclCB);
 
   ros::Duration(2.0).sleep();
 
@@ -150,9 +191,11 @@ int main(int argc, char ** argv) {
   makeReferencePath(ref_path_pub);
 
   double vel_max = 0.5;
-  double omega_max = 0.5;
+  double omega_max = 1.0;
 
   while (ros::ok()) {
+
+    // getPoseFromTF();
     // makeReferencePath(ref_path_pub);
     //
     delta_t = ros::Time::now() - zero_time;
@@ -207,9 +250,9 @@ int main(int argc, char ** argv) {
     omega = omega_ref + k_y*error_y + k_yaw*error_yaw;
 
     // Ensure that the linear velocity does not exceed the maximum allowed
-    // if (vel > vel_max) {
-    //   vel = vel_max;
-    // }
+    if (vel > vel_max) {
+      vel = vel_max;
+    }
 
     if (vel < 0.0) {
       vel = 0.0;

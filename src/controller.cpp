@@ -143,6 +143,8 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
   vel_ref_ = vel_ref_old_ - 0.5*(vel_ref_old_ - vel_ref_);
 
+  omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+
   if (vel_ref_ < 0.0) {
     vel_ref_ = 0.0;
   }
@@ -233,51 +235,7 @@ void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, do
   }
 }
 
-double Controller::getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg) {
-  double roll, pitch, yaw;
 
-  tf2::Quaternion quat(quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w);
-  tf2::Matrix3x3 m(quat);
-  m.getRPY(roll, pitch, yaw);
 
-  return yaw;
-}
-
-void Controller::getRobotPoseFromTF2() {}
-
-double Controller::euclideanDistance(double x1, double y1, double x2, double y2) {
-  return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
-}
-
-void Controller::publishReferencePose(double x, double y, double yaw) {
-  geometry_msgs::PoseStamped pose;
-  pose.header.frame_id = "map";
-  pose.pose.position.x = x;
-  pose.pose.position.y = y;
-  pose.pose.position.z = 0.0;
-
-  tf2::Quaternion quat_tf;
-  geometry_msgs::Quaternion quat_msg;
-
-  quat_tf.setRPY(0, 0, yaw);
-  quat_tf.normalize();
-  quat_msg = tf2::toMsg(quat_tf);
-
-  // Set orientation
-  pose.pose.orientation = quat_msg;
-  ref_pose_pub_.publish(pose);
-}
-
-void Controller::makeReferencePath() {
-  geometry_msgs::PoseArray path;
-
-  for (int i = 0; i < ref_states_matrix_.cols(); ++i) {
-    geometry_msgs::Pose pose;
-    pose.position.x = ref_states_matrix_(0, i);
-    pose.position.y = ref_states_matrix_(1, i);
-    path.poses.push_back(pose);
-  }
-  ref_path_pub_.publish(path);
-}
 
 }  // namespace trajectory_tracking_control
