@@ -7,6 +7,7 @@
 
 // ROS Messages
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseArray.h>
 
 // Angles
 #include <angles/angles.h>
@@ -21,7 +22,10 @@
 #include <string>
 #include <cmath>
 
-#include <boost/bind.hpp>
+// Eigen
+#include <eigen3/Eigen/Core>
+
+using Eigen::MatrixXd;
 
 
 namespace trajectory_tracking_control {
@@ -39,7 +43,7 @@ class PoseHandler {
 
   void publishReferencePose(double x, double y, double yaw, const ros::Publisher &pub);
 
-  void makeReferencePath();
+  void publishReferencePath(const MatrixXd &ref_states_matrix,const ros::Publisher &pub);
 
  protected:
 

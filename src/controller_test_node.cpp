@@ -195,9 +195,7 @@ int main(int argc, char ** argv) {
 
   while (ros::ok()) {
 
-    // getPoseFromTF();
-    // makeReferencePath(ref_path_pub);
-    //
+
     delta_t = ros::Time::now() - zero_time;
     delta_t_sec = delta_t.toSec();
 
