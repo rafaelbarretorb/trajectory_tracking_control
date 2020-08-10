@@ -34,7 +34,7 @@
 #include <boost/bind.hpp>
 
 using Eigen::MatrixXd;
-using Eigen::VectorXf;
+using Eigen::VectorXd;
 
 namespace trajectory_tracking_control {
 
@@ -45,16 +45,18 @@ class ControllerConstTrajectory {
 
   void execute();
 
-  void makeReferenceTrajectory(double freq);
+  void makeReferenceTrajectory(double freq, double x_offset, double y_offset, double A);
 
-  void computeReferenceStates(VectorXf *v, double time, double freq,
+  void computeReferenceStates(VectorXd *v, double time, double freq,
                              double x_offset, double y_offset, double A);
 
  protected:
   PoseHandler pose_handler_;
   ros::NodeHandle nh_;
 
-
+  // Reference Matrix
+  MatrixXd ref_states_matrix_;
+  
   // Posture Error Matrix (3x1)
   MatrixXd error_;
 

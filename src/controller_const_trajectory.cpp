@@ -47,8 +47,6 @@ void ControllerConstTrajectory::execute() {
   ros::Duration delta_t;
   double delta_t_sec;
 
-  pose_handler_.publishReferencePath(ref_path_pub);
-
   double omega;
   double vel;
 
@@ -64,7 +62,10 @@ void ControllerConstTrajectory::execute() {
   double y_offset = 0.0;
   double freq = 2*M_PI/30;
 
-  VectorXf ref_states(6);
+  makeReferenceTrajectory(freq, x_offset, y_offset, A);
+  pose_handler_.publishReferencePath(ref_states_matrix_, ref_path_pub_);
+
+  VectorXd ref_states(6);
 
   while (ros::ok()) {
     // Get time in secs
@@ -146,7 +147,7 @@ void ControllerConstTrajectory::execute() {
   }
 }
 
-void ControllerConstTrajectory::computeReferenceStates(VectorXf *v, double time, double freq,
+void ControllerConstTrajectory::computeReferenceStates(VectorXd *v, double time, double freq,
                                                       double x_offset, double y_offset,
                                                       double A) {
   double x_ref = x_offset + A*sin(freq*time);
@@ -159,14 +160,21 @@ void ControllerConstTrajectory::computeReferenceStates(VectorXf *v, double time,
   *v << x_ref, y_ref, dx_ref, dy_ref, ddx_ref, ddy_ref;
 }
 
-void ControllerConstTrajectory::makeReferenceTrajectory(double freq) {
+void ControllerConstTrajectory::makeReferenceTrajectory(double freq, double x_offset, double y_offset, double A) {
+  // Just making a reference path to Rviz
+  int N = 100;
 
-  // TODO Not finish yet
-  double time = 0.0;
-  while (time*freq < 2*M_PI) {
-    time = time + 0.5;
+  VectorXd vec(6);
+  double Ts = 0.5;  
+
+  // Just two rows
+  MatrixXd m(2, N);
+  for (int i = 0; i < N; ++i) {
+    computeReferenceStates(&vec, i*Ts, freq, x_offset, y_offset, A);
+    m(0, i) = vec(0);
+    m(1, i) = vec(1);
   }
-
+  ref_states_matrix_ = m;
 }
 
 } // namespace trajectory_tracking_control
