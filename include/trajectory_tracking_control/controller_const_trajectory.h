@@ -47,8 +47,9 @@ class ControllerConstTrajectory {
 
   void makeReferenceTrajectory(double freq, double x_offset, double y_offset, double A);
 
-  void computeReferenceStates(VectorXd *v, double time, double freq,
+  void computeReferenceStates(double time, double freq,
                              double x_offset, double y_offset, double A);
+  
 
  protected:
   PoseHandler pose_handler_;

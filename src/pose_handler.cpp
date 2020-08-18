@@ -7,7 +7,6 @@ PoseHandler::PoseHandler(tf2_ros::Buffer* tf) : tf_(tf), tfl_(*tf_) {
   odom_frame_ = "odom";
   global_frame_ = "map";
   robot_base_frame_ = "base_link";
-
 }
 
 const geometry_msgs::Pose &PoseHandler::getRobotPose() {
@@ -22,6 +21,7 @@ const geometry_msgs::Pose &PoseHandler::getRobotPose() {
   robot_pose_.orientation.y = transformStamped.transform.rotation.y;
   robot_pose_.orientation.z = transformStamped.transform.rotation.z;
   robot_pose_.orientation.w = transformStamped.transform.rotation.w;
+
   return robot_pose_;
 }
 

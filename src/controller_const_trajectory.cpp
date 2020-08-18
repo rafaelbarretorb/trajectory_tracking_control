@@ -8,7 +8,7 @@ ControllerConstTrajectory::ControllerConstTrajectory(ros::NodeHandle *nodehandle
                                                       pose_handler_(&tf) {
 
   // Initialize Publishers
-  ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);;
+  ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
 
@@ -18,16 +18,18 @@ ControllerConstTrajectory::ControllerConstTrajectory(ros::NodeHandle *nodehandle
   tf_to_global_ = MatrixXd(3, 3);
   error_ = MatrixXd(3, 1);
 
+  vel_max_ = 0.55;
+  omega_max_ = 0.5;
+
   // Just the loop function to test the localization for now
   execute();
 }
 
 void ControllerConstTrajectory::execute() {
-  ros::Rate rate(10);
+  ros::Rate rate(40);
 
   ros::Duration(2.0).sleep();
   
-
   geometry_msgs::Twist cmd_vel;
 
   // Posture Error Matrix (3x1)
@@ -52,27 +54,27 @@ void ControllerConstTrajectory::execute() {
 
   // Max linear and angular velocities
   double vel_max = 0.5;
-  double omega_max = 1.0;
+  double omega_max = 0.3;
   
   // Current pose of the robot
   geometry_msgs::Pose curr_pose;
 
-  double A = 2.5;
-  double x_offset = 0.0;
+  double A = 3.0;
+  double x_offset = 2.0;
   double y_offset = 0.0;
-  double freq = 2*M_PI/30;
+  double freq = 2*M_PI/60;
 
   makeReferenceTrajectory(freq, x_offset, y_offset, A);
   pose_handler_.publishReferencePath(ref_states_matrix_, ref_path_pub_);
 
-  VectorXd ref_states(6);
+  // VectorXd ref_states(6);
 
   while (ros::ok()) {
     // Get time in secs
     delta_t = ros::Time::now() - zero_time;
     delta_t_sec = delta_t.toSec();
 
-    computeReferenceStates(&ref_states, delta_t_sec, freq, x_offset, y_offset, A);
+    computeReferenceStates(delta_t_sec, freq, x_offset, y_offset, A);
   
     // Update robot pose
     curr_pose = pose_handler_.getRobotPose();
@@ -82,6 +84,7 @@ void ControllerConstTrajectory::execute() {
     q_ref_ << x_ref_, y_ref_, yaw_ref_;
 
     // Publish reference pose
+    // ROS_INFO("Pose: (%f , %f)", x_ref_, y_ref_);
     pose_handler_.publishReferencePose(x_ref_, y_ref_, yaw_ref_, ref_pose_pub_);
 
     yaw_curr_ = pose_handler_.getYawFromQuaternion(curr_pose.orientation);
@@ -92,87 +95,92 @@ void ControllerConstTrajectory::execute() {
 
     omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
 
-  if (vel_ref_ < 0.0) {
-    vel_ref_ = 0.0;
-  }
+    tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
+                    -sin(yaw_curr_), cos(yaw_curr_), 0.0,
+                    0.0, 0.0, 1.0;
 
-  tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
-                   -sin(yaw_curr_), cos(yaw_curr_), 0.0,
-                   0.0, 0.0, 1.0;
+    // Posture Error
+    error_ = tf_to_global_ * (q_ref_ - q_curr_);
 
-  // Posture Error
-  error_ = tf_to_global_ * (q_ref_ - q_curr_);
+    // Wrap to PI yaw error
+    error_(2, 0) = angles::normalize_angle(error_(2, 0));
 
-  // Wrap to PI yaw error
-  error_(2, 0) = angles::normalize_angle(error_(2, 0));
+    // Control
+    error_x_ = error_(0, 0);
+    error_y_ = error_(1, 0);
+    error_yaw_ = error_(2, 0);
 
-  // Control
-  error_x_ = error_(0, 0);
-  error_y_ = error_(1, 0);
-  error_yaw_ = error_(2, 0);
+    // ROS_INFO("error_yaw = %f", vel);
 
-  // TODO(BARRETO) Hard coding for now
-  g_ = 1.5;
-  zeta_ = 45;
+    // TODO(BARRETO) Hard coding for now
+    // g_ = 1.5;
+    // zeta_ = 45;
+    // g_ = 2.0;
+    // zeta_ = 60;
+    g_ = 1.0;
+    zeta_ = 20;
+    // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+    // k_y_ = g_*vel_ref_;
+    // k_yaw_ = k_x_;
 
-  k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  k_y_ = g_*vel_ref_;
-  k_yaw_ = k_x_;
+    // Constants gains
+    k_x_ = 5;
+    k_y_ = 15;
+    k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+    vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
+    omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
 
-  vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
-  omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
+    // Ensure that the linear velocity does not exceed the maximum allowed
+    if (vel > vel_max_) {
+      vel = vel_max_;
+    }
+  
+    // Ensure that the linear velocity is not negative
+    if (vel < 0.0) {
+      vel = 0;
+    }
 
-  // Ensure that the linear velocity does not exceed the maximum allowed
-  if (vel > vel_max_) {
-    vel = vel_max_;
-  }
-
-  // Ensure that the angular velocity does not exceed the maximum allowed
-  if (fabs(omega) > omega_max_) {
-    omega = copysign(omega_max_, omega);
-  }
-
-  if (vel < 0.0){
-    vel = 0.0;
-  }
+    // Ensure that the angular velocity does not exceed the maximum allowed
+    if (fabs(omega) > omega_max_) {
+      omega = copysign(omega_max_, omega);
+    }
 
     cmd_vel.linear.x = vel;
     cmd_vel.angular.z = omega;
 
+    // ROS_INFO("Velocity : %f", vel);
+
     // Publish velocity command
-    // cmd_vel_pub_.publish(cmd_vel);
+    cmd_vel_pub_.publish(cmd_vel);
 
     ros::spinOnce();
     rate.sleep();
   }
 }
 
-void ControllerConstTrajectory::computeReferenceStates(VectorXd *v, double time, double freq,
+void ControllerConstTrajectory::computeReferenceStates(double time, double freq,
                                                       double x_offset, double y_offset,
                                                       double A) {
-  double x_ref = x_offset + A*sin(freq*time);
-  double y_ref = y_offset + A*sin(2*freq*time);
-  double dx_ref = freq*A*cos(freq*time);
-  double dy_ref = 2*freq*A*cos(2*freq*time);
-  double ddx_ref = -freq*freq*A*sin(freq*time);
-  double ddy_ref = -4*freq*freq*A*sin(2*freq*time);
-
-  *v << x_ref, y_ref, dx_ref, dy_ref, ddx_ref, ddy_ref;
+  x_ref_ = x_offset + A*sin(freq*time);
+  y_ref_ = y_offset + A*sin(2*freq*time);
+  dx_ref_ = freq*A*cos(freq*time);
+  dy_ref_ = 2*freq*A*cos(2*freq*time);
+  ddx_ref_ = -freq*freq*A*sin(freq*time);
+  ddy_ref_ = -4*freq*freq*A*sin(2*freq*time);
 }
 
 void ControllerConstTrajectory::makeReferenceTrajectory(double freq, double x_offset, double y_offset, double A) {
   // Just making a reference path to Rviz
-  int N = 100;
+  int N = 150;
 
-  VectorXd vec(6);
   double Ts = 0.5;  
 
   // Just two rows
   MatrixXd m(2, N);
   for (int i = 0; i < N; ++i) {
-    computeReferenceStates(&vec, i*Ts, freq, x_offset, y_offset, A);
-    m(0, i) = vec(0);
-    m(1, i) = vec(1);
+    computeReferenceStates(i*Ts, freq, x_offset, y_offset, A);
+    m(0, i) = x_ref_;
+    m(1, i) = y_ref_;
   }
   ref_states_matrix_ = m;
 }
