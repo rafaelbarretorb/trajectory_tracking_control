@@ -118,14 +118,14 @@ void ControllerConstTrajectory::execute() {
     // g_ = 2.0;
     // zeta_ = 60;
     g_ = 1.0;
-    zeta_ = 20;
+    zeta_ = 25;
     // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
     // k_y_ = g_*vel_ref_;
     // k_yaw_ = k_x_;
 
     // Constants gains
     k_x_ = 5;
-    k_y_ = 15;
+    k_y_ = 25;
     k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
     vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
     omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
