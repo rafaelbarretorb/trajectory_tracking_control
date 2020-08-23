@@ -143,6 +143,8 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
   vel_ref_ = vel_ref_old_ - 0.5*(vel_ref_old_ - vel_ref_);
 
+  omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+
   if (vel_ref_ < 0.0) {
     vel_ref_ = 0.0;
   }
