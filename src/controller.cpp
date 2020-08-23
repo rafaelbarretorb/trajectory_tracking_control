@@ -4,20 +4,18 @@
 
 namespace trajectory_tracking_control {
 
-Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
+Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf) :
                        action_name_(name),
                        nh_(*nodehandle),
+                       pose_handler_(&tf), 
                        as_(nh_, name, boost::bind(&Controller::executeCB, this, _1), false) {
   as_.start();
 
   // Initialize matrices
-
   q_ref_ = MatrixXd(3, 1);
   q_curr_ = MatrixXd(3, 1);
   tf_to_global_ = MatrixXd(3, 3);
   error_ = MatrixXd(3, 1);
-
-  pose_sub_ = nh_.subscribe("/odometry/filtered", 100, &Controller::updateCurrentPoseCB, this);
 
   ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
@@ -25,9 +23,13 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
 
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 
-  vel_max_ = 0.50;
+  vel_max_ = 0.5;
   omega_max_ = 0.4;
   vel_old_ = 0.0;
+
+  // Controller Parameters
+  g_ = 1.0;
+  zeta_ = 25;
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -41,7 +43,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   requestReferenceMatrix(goal->path, goal->average_velocity, goal->sampling_time);
 
   // Publish Reference path TODO(Rafael) here?
-  makeReferencePath();
+  pose_handler_.publishReferencePath(ref_states_matrix_, ref_path_pub_);
 
   geometry_msgs::Twist cmd_vel;
   int n;
@@ -66,7 +68,8 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
       n = ref_states_matrix_.cols() - 1;
     }
 
-    if (computeVelocityCommands(cmd_vel, n)) {
+    updateReferenceState(n);
+    if (computeVelocityCommands(cmd_vel)) {
       // Publish cmd_vel
       cmd_vel_pub_.publish(cmd_vel);
 
@@ -96,10 +99,10 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
 }
 
 bool Controller::isGoalReached() {
-  double distance = euclideanDistance(goal_position_.x, goal_position_.y,
-                                      robot_pose_.position.x, robot_pose_.position.y);
+  double distance = pose_handler_.euclideanDistance(goal_position_.x, goal_position_.y,
+                                      curr_pose_.position.x, curr_pose_.position.y);
   // TODO(BARRETO) remove after, hard coding
-  double tolerance = 0.2;
+  double tolerance = 0.25;
 
   if (distance < tolerance) {
     goal_reached_ = true;
@@ -108,47 +111,37 @@ bool Controller::isGoalReached() {
   }
 }
 
-void Controller::updateCurrentPoseCB(const nav_msgs::Odometry & msg) {
-  robot_pose_.position.x = msg.pose.pose.position.x;
-  robot_pose_.position.y = msg.pose.pose.position.y;
-
-  robot_pose_.orientation.x = msg.pose.pose.orientation.x;
-  robot_pose_.orientation.y = msg.pose.pose.orientation.y;
-  robot_pose_.orientation.z = msg.pose.pose.orientation.z;
-  robot_pose_.orientation.w = msg.pose.pose.orientation.w;
-}
-
-bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time_idx) {
-  double omega;
-  double vel;
-
-  x_ref_ = ref_states_matrix_(0, time_idx);
-  y_ref_ = ref_states_matrix_(1, time_idx);
-  dx_ref_ = ref_states_matrix_(2, time_idx);
-  dy_ref_ = ref_states_matrix_(3, time_idx);
-  ddx_ref_ = ref_states_matrix_(4, time_idx);
-  ddy_ref_ = ref_states_matrix_(5, time_idx);
+void Controller::updateReferenceState(int n) {
+  x_ref_ = ref_states_matrix_(0, n);
+  y_ref_ = ref_states_matrix_(1, n);
+  dx_ref_ = ref_states_matrix_(2, n);
+  dy_ref_ = ref_states_matrix_(3, n);
+  ddx_ref_ = ref_states_matrix_(4, n);
+  ddy_ref_ = ref_states_matrix_(5, n);
 
   yaw_ref_ = atan2(dy_ref_, dx_ref_);
 
+  // Reference Pose State
   q_ref_ << x_ref_, y_ref_, yaw_ref_;
 
-  // Publish reference pose
-  publishReferencePose(x_ref_, y_ref_, yaw_ref_);
-
-  yaw_curr_ = getYawFromQuaternion(robot_pose_.orientation);
-
-  q_curr_ << robot_pose_.position.x, robot_pose_.position.y, yaw_curr_;
-
+  // Reference Velocities
   vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
-  vel_ref_ = vel_ref_old_ - 0.5*(vel_ref_old_ - vel_ref_);
-
   omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
 
-  if (vel_ref_ < 0.0) {
-    vel_ref_ = 0.0;
-  }
+  // Publish reference pose
+  pose_handler_.publishReferencePose(x_ref_, y_ref_, yaw_ref_, ref_pose_pub_);
+}
 
+bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
+  double omega;
+  double vel;
+
+  // Update robot pose
+  curr_pose_ = pose_handler_.getRobotPose();
+  yaw_curr_ = pose_handler_.getYawFromQuaternion(curr_pose_.orientation);
+  q_curr_ << curr_pose_.position.x, curr_pose_.position.y, yaw_curr_;
+
+  // Transform to global coordinate
   tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
                    -sin(yaw_curr_), cos(yaw_curr_), 0.0,
                    0.0, 0.0, 1.0;
@@ -164,17 +157,19 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   error_y_ = error_(1, 0);
   error_yaw_ = error_(2, 0);
 
-  // TODO(BARRETO) Hard coding for now
-  g_ = 1.5;
-  zeta_ = 45;
+  // Gains
+  // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  // k_y_ = g_*vel_ref_;
+  // k_yaw_ = k_x_;
+  // Constants gains
+  k_x_ = 5;
+  k_y_ = 25;
 
-  k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  k_y_ = g_*vel_ref_;
-  k_yaw_ = k_x_;
+  // Variable gaion
+  k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
 
+  // Compute Velocities
   vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
-  vel = vel_old_ - 0.5*(vel_old_ - vel);
-
   omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
 
   // Ensure that the linear velocity does not exceed the maximum allowed
@@ -193,11 +188,6 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
 
   cmd_vel.linear.x = vel;
   cmd_vel.angular.z = omega;
-
-  vel_old_ = vel;
-  vel_ref_old_ = vel_ref_;
-
-  ROS_INFO("Velocity: %f", vel);
 
   return true;
 }
@@ -234,8 +224,5 @@ void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, do
     }
   }
 }
-
-
-
 
 }  // namespace trajectory_tracking_control

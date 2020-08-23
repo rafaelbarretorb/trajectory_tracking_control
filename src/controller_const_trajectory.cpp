@@ -28,7 +28,7 @@ ControllerConstTrajectory::ControllerConstTrajectory(ros::NodeHandle *nodehandle
 void ControllerConstTrajectory::execute() {
   ros::Rate rate(40);
 
-  ros::Duration(2.0).sleep();
+  ros::Duration(5.0).sleep();
   
   geometry_msgs::Twist cmd_vel;
 

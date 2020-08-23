@@ -102,9 +102,9 @@ include_directories(
 add_executable(
   trajectory_tracking_control
   src/controller_node.cpp
-  src/controller_const_trajectory.cpp
+#   src/controller_const_trajectory.cpp
   src/pose_handler.cpp
-#   src/controller.cpp
+  src/controller.cpp
 #   src/controller_test_node.cpp
 #   src/test_localization.cpp
 )

@@ -67,4 +67,8 @@ void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix,const r
   pub.publish(path);
 }
 
+double PoseHandler::euclideanDistance(double x1, double y1, double x2, double y2) {
+  return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+}
+
 }  // namespace trajectory_tracking_control

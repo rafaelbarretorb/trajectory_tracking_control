@@ -6,6 +6,7 @@
 
 #include <ros/ros.h>
 
+#include <trajectory_tracking_control/pose_handler.h>
 
 // Messages
 #include <geometry_msgs/Point.h>
@@ -49,7 +50,7 @@ typedef actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajec
 
 class Controller {
  public:
-  Controller(const std::string &name, ros::NodeHandle *nodehandle);
+  Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf);
 
   void executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
@@ -57,21 +58,15 @@ class Controller {
 
   bool isGoalReached();
 
-  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time_idx); //NOLINT
+  // TODO return bool?
+  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel); //NOLINT
 
-  void updateCurrentPoseCB(const nav_msgs::Odometry & msg);
-
-  double getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg);
-
-  void getRobotPoseFromTF2();
-
-  double euclideanDistance(double x1, double y1, double x2, double y2);
-
-  void publishReferencePose(double x, double y, double yaw);
+  virtual void updateReferenceState(int n);
 
   void makeReferencePath();
 
  protected:
+  PoseHandler pose_handler_;
   std::string action_name_;
   ros::NodeHandle nh_;
   ExecuteTrajectoryTrackingActionServer as_;
@@ -84,7 +79,7 @@ class Controller {
   MatrixXd ref_states_matrix_;
 
   // Current Pose
-  geometry_msgs::Pose robot_pose_;
+  geometry_msgs::Pose curr_pose_;
 
   // Posture Error Matrix (3x1)
   MatrixXd error_;
