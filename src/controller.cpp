@@ -23,12 +23,12 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2
 
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 
-  vel_max_ = 0.5;
-  omega_max_ = 0.4;
+  vel_max_ = 0.4;
+  omega_max_ = 0.5;
   vel_old_ = 0.0;
 
   // Controller Parameters
-  g_ = 1.0;
+  g_ = 2.0;
   zeta_ = 25;
 }
 
@@ -50,12 +50,14 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   double step = goal_distance_/ref_states_matrix_.cols();
 
   // TODO(BARRETO) rate is not constant?
-  ros::Rate rate(20);
+  ros::Rate rate(40);
 
   // ROS Time
   ros::Time zero_time = ros::Time::now();
   ros::Duration delta_t;
-  double delta_t_sec;
+  double delta_t_sec, delta_t_finish;
+  ros::Time zero_time2 = ros::Time::now();
+  bool final = false;
 
   while (ros::ok() && !goal_reached_) {
     isGoalReached();
@@ -66,6 +68,15 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     n = round(delta_t_sec/(goal->sampling_time));
     if (n > ref_states_matrix_.cols() - 1) {
       n = ref_states_matrix_.cols() - 1;
+
+      if (!final) {
+        zero_time2 = ros::Time::now();
+        final = true;
+      }
+
+      delta_t_finish = (ros::Time::now() - zero_time2).toSec();
+      if (delta_t_finish > 5.0)
+        goal_reached_ = true;
     }
 
     updateReferenceState(n);
@@ -102,7 +113,7 @@ bool Controller::isGoalReached() {
   double distance = pose_handler_.euclideanDistance(goal_position_.x, goal_position_.y,
                                       curr_pose_.position.x, curr_pose_.position.y);
   // TODO(BARRETO) remove after, hard coding
-  double tolerance = 0.25;
+  double tolerance = 0.3;
 
   if (distance < tolerance) {
     goal_reached_ = true;
@@ -162,20 +173,16 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   // k_y_ = g_*vel_ref_;
   // k_yaw_ = k_x_;
   // Constants gains
-  k_x_ = 5;
-  k_y_ = 25;
+  k_x_ = 3;
+  k_y_ = 30;
 
   // Variable gaion
-  k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  // k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  k_yaw_ = 15;
 
   // Compute Velocities
   vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
   omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
-
-  // Ensure that the linear velocity does not exceed the maximum allowed
-  if (vel > vel_max_) {
-    vel = vel_max_;
-  }
 
   // Ensure that the angular velocity does not exceed the maximum allowed
   if (fabs(omega) > omega_max_) {
@@ -184,6 +191,12 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
   if (vel < 0.0){
     vel = 0.0;
+  }
+
+  
+  // Ensure that the linear velocity does not exceed the maximum allowed
+  if (vel > vel_max_) {
+    vel = vel_max_;
   }
 
   cmd_vel.linear.x = vel;
