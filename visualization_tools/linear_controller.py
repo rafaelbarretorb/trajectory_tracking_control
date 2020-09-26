@@ -6,35 +6,46 @@ Python code based on the MATLAB script of Example 3.9, Listing 3.8, from the boo
 import numpy as np
 
 PI = np.pi
+def wrapToPi(theta):
+    """ """
+    return (theta + np.pi) % (2 * np.pi) - np.pi
 
-Ts = 0.05  # Sampling time
-Td = 30  # Simulation duration time
-t = np.arange(0, Td+Ts, Ts)
-q = np.array([ [1.1], [0.8], [0]])
+def wrapToPi2(theta):
+    """ """
+    return np.arctan2(np.sin(theta), np.cos(theta))
 
-# Reference
-w_f = 2*PI/30  # Angular frequency
+def main():
+    # Ts = 0.05  # Sampling time
+    # Td = 30  # Simulation duration time
+    # t = np.arange(0, Td+Ts, Ts)
+    # q = np.array([ [1.1], [0.8], [0]])
 
-xRef = 1.1 + 0.7*np.sin(w_f*t)
-yRef = 0.9 + 0.7*np.sin(2*freq*t) 
+    # # Reference
+    # w_f = 2*PI/30  # Angular frequency
 
-dxRef = w_f*0.7*np.cos(w_f*t)
-dyRef = 2*w_f*0.7*np.cos(2*w_f*t)
+    # xRef = 1.1 + 0.7*np.sin(w_f*t)
+    # yRef = 0.9 + 0.7*np.sin(2*freq*t) 
 
-ddxRef = -(w_f**2)*2*0.7*np.sin(w_f*t)
-ddyRef = -4*(w_f**2)*0.7*np.sin(2*w_f*t)
+    # dxRef = w_f*0.7*np.cos(w_f*t)
+    # dyRef = 2*w_f*0.7*np.cos(2*w_f*t)
 
-qRef = np.array([ [xRef], [yRef], [np.arctan2(dyRef, dxRef] ])  # Reference trajectory
+    # ddxRef = -(w_f**2)*2*0.7*np.sin(w_f*t)
+    # ddyRef = -4*(w_f**2)*0.7*np.sin(2*w_f*t)
 
-vRef = np.array([np.sqrt(dxRef**2 + dyRef**2)])
-wRef = np.array([ (dxRef*ddyRef - dyRef*ddxRef)/(dxRef**2 + dyRef**2) ])
+    # qRef = np.array([ [xRef], [yRef], [np.arctan2(dyRef, dxRef] ])  # Reference trajectory
 
-uRef = np.array([ [vRef], [wRef] ])
+    # vRef = np.array([np.sqrt(dxRef**2 + dyRef**2)])
+    # wRef = np.array([ (dxRef*ddyRef - dyRef*ddxRef)/(dxRef**2 + dyRef**2) ])
+
+    # uRef = np.array([ [vRef], [wRef] ])
 
 
-for i in range(t.size):
-    e = np.array([ [np.cos(q[3][0]), np.sin(q[3][0]), 0],
-                   [-np.sin(q[3][0]), np.cos(q[3][0]), 0] 
-                   [0, 0, 1] ])*(qRef - q)
-    
-    
+    # for i in range(t.size):
+    #     e = np.array([ [np.cos(q[3][0]), np.sin(q[3][0]), 0],
+    #                 [-np.sin(q[3][0]), np.cos(q[3][0]), 0] 
+    #                 [0, 0, 1] ])*(qRef[:, [i] ] - q)
+    pass
+
+
+if __name__ == "__main__":
+    main()
