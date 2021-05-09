@@ -64,7 +64,7 @@ class ReferenceStates():
         traj_size = int(self.traj_length/dist_step)
 
         # Spline
-        spline_curve, cv = make_spline_curve(0.5, 0.35, traj_size)
+        spline_curve, cv = self.make_spline_curve(0.5, 0.35, traj_size)
         x, y = spline_curve.T
 
         self.columns_size = len(x)
@@ -154,7 +154,7 @@ class ReferenceStates():
                     n = n - 1
                 for j in range(n):
                     count = count + 1
-                    x, y = steer((x1, y1), (x2, y2), max_distance, j + 1)
+                    x, y = self.steer((x1, y1), (x2, y2), max_distance, j + 1)
                     row = np.array([x, y])
                     cv_copy = np.insert(cv_copy, i - 1 + count, row, axis=0)
 
@@ -165,11 +165,11 @@ class ReferenceStates():
         theta = math.atan2(p2[1]-p1[1],p2[0]-p1[0])
         return p1[0] + n * epsilon * math.cos(theta), p1[1] + n * epsilon * math.sin(theta)
 
-    def make_spline_curve(max_distance, tolerance, size, insert_cv=True):
+    def make_spline_curve(self, max_distance, tolerance, size, insert_cv=True):
         spline_curve = list()
         data = np.array(self.path)
         if insert_cv:
-            data = insert_control_points(data, max_distance, tolerance)
+            data = self.insert_control_points(data, max_distance, tolerance)
         spline_curve = b_spline(data, n=size, degree=3)
 
         return spline_curve, data
