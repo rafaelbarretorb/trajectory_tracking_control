@@ -151,7 +151,7 @@ class ReferenceStates():
             x2 = cv[i][0]
             y2 = cv[i][1]
 
-            dist = distance((x1, y1), (x2, y2))
+            dist = self.distance((x1, y1), (x2, y2))
             
             if dist > max_distance:
                 n = int(dist/max_distance)
