@@ -2,6 +2,7 @@
 
 # Copyright 2020
 
+import rospy
 import numpy as np
 import math
 from scipy import interpolate
@@ -63,8 +64,11 @@ class ReferenceStates():
         # Spline Size
         traj_size = int(self.traj_length/dist_step)
 
+        rospy.loginfo("TEST 1")
         # Spline
         spline_curve, cv = self.make_spline_curve(0.5, 0.35, traj_size)
+
+        rospy.loginfo("TEST 2")
         x, y = spline_curve.T
 
         self.columns_size = len(x)
@@ -78,6 +82,7 @@ class ReferenceStates():
         ddy = np.gradient(dy)/np.gradient(time)
 
         states_ref = np.vstack((x, y, dx, dy, ddx, ddy))
+        rospy.loginfo("TEST 3")
 
         return states_ref
 
