@@ -5,6 +5,7 @@
 import numpy as np
 import math
 from scipy import interpolate
+import copy
 
 
 class ReferenceStates():
@@ -63,8 +64,8 @@ class ReferenceStates():
         traj_size = int(self.traj_length/dist_step)
 
         # Spline
-        p = self.bspline(data, n=traj_size, degree=3)
-        x, y = p.T
+        spline_curve, cv = make_spline_curve(0.5, 0.35, traj_size)
+        x, y = spline_curve.T
 
         self.columns_size = len(x)
 
@@ -80,7 +81,7 @@ class ReferenceStates():
 
         return states_ref
 
-    def bspline(self, cv, n=100, degree=3, periodic=False):
+    def b_spline(self, cv, n=100, degree=3, periodic=False):
         """ Calculate n samples on a bspline
 
             cv :      Array ov control vertices
@@ -120,7 +121,7 @@ class ReferenceStates():
 
     def distance(self, x1, y1, x2, y2):
         """ Euclidean distance between two points (x1,y1) and (x2,y2)."""
-        return math.sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2))
+        return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
     def get_columns_size(self):
         """."""
@@ -133,3 +134,42 @@ class ReferenceStates():
     def get_trajectory_length(self):
         """."""
         return self.traj_length
+
+    def insert_control_points(self, cv, max_distance, tolerance):
+        """ ."""
+        cv_copy = copy.deepcopy(cv)
+        count = 0
+        for i in range(1, cv.shape[0]):
+            x1 = cv[i-1][0]
+            y1 = cv[i-1][1]
+
+            x2 = cv[i][0]
+            y2 = cv[i][1]
+
+            dist = distance((x1, y1), (x2, y2))
+            
+            if dist > max_distance:
+                n = int(dist/max_distance)
+                if dist - n*max_distance < tolerance*max_distance:
+                    n = n - 1
+                for j in range(n):
+                    count = count + 1
+                    x, y = steer((x1, y1), (x2, y2), max_distance, j + 1)
+                    row = np.array([x, y])
+                    cv_copy = np.insert(cv_copy, i - 1 + count, row, axis=0)
+
+        return cv_copy
+
+    def steer(self, p1, p2, epsilon, n):
+        """ ."""
+        theta = math.atan2(p2[1]-p1[1],p2[0]-p1[0])
+        return p1[0] + n * epsilon * math.cos(theta), p1[1] + n * epsilon * math.sin(theta)
+
+    def make_spline_curve(max_distance, tolerance, size, insert_cv=True):
+        spline_curve = list()
+        data = np.array(self.path)
+        if insert_cv:
+            data = insert_control_points(data, max_distance, tolerance)
+        spline_curve = b_spline(data, n=size, degree=3)
+
+        return spline_curve, data
