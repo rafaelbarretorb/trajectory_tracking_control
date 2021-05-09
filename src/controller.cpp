@@ -23,13 +23,13 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2
 
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 
-  vel_max_ = 0.4;
+  vel_max_ = 0.35;
   omega_max_ = 0.5;
   vel_old_ = 0.0;
 
   // Controller Parameters
-  g_ = 2.0;
-  zeta_ = 25;
+  g_ = 5.0;
+  zeta_ = 40.0;
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -50,7 +50,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   double step = goal_distance_/ref_states_matrix_.cols();
 
   // TODO(BARRETO) rate is not constant?
-  ros::Rate rate(40);
+  ros::Rate rate(20);
 
   // ROS Time
   ros::Time zero_time = ros::Time::now();
@@ -65,6 +65,8 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     delta_t = ros::Time::now() - zero_time;
     delta_t_sec = delta_t.toSec();
 
+    // ROS_INFO("Time: %2f", delta_t_sec);
+
     n = round(delta_t_sec/(goal->sampling_time));
     if (n > ref_states_matrix_.cols() - 1) {
       n = ref_states_matrix_.cols() - 1;
@@ -74,6 +76,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
         final = true;
       }
 
+      // Tmp: remove this
       delta_t_finish = (ros::Time::now() - zero_time2).toSec();
       if (delta_t_finish > 5.0)
         goal_reached_ = true;
@@ -106,14 +109,14 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   // Stop the robot
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
-  cmd_vel_pub_.publish(cmd_vel);
+  // cmd_vel_pub_.publish(cmd_vel);
 }
 
 bool Controller::isGoalReached() {
   double distance = pose_handler_.euclideanDistance(goal_position_.x, goal_position_.y,
                                       curr_pose_.position.x, curr_pose_.position.y);
   // TODO(BARRETO) remove after, hard coding
-  double tolerance = 0.3;
+  double tolerance = 0.2;
 
   if (distance < tolerance) {
     goal_reached_ = true;
@@ -169,16 +172,21 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   error_yaw_ = error_(2, 0);
 
   // Gains
-  // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  // k_y_ = g_*vel_ref_;
-  // k_yaw_ = k_x_;
-  // Constants gains
-  k_x_ = 3;
-  k_y_ = 30;
+  k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  k_y_ = g_*vel_ref_;
+  k_yaw_ = k_x_;
 
-  // Variable gaion
+  ROS_INFO("k_x: %0.2f", k_x_);
+  ROS_INFO("k_y: %0.2f", k_y_);
+  ROS_INFO("k_yaw: %0.2f\n", k_yaw_);
+  // Constants gains
+  // k_x_ = 3;
+  // k_y_ = 30;
+  //k_yaw_ = 15;
+
+  // Variable gain
   // k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  k_yaw_ = 15;
+  // 
 
   // Compute Velocities
   vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;

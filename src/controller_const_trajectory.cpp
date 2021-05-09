@@ -53,7 +53,7 @@ void ControllerConstTrajectory::execute() {
   double vel;
 
   // Max linear and angular velocities
-  double vel_max = 0.5;
+  double vel_max = 0.3;
   double omega_max = 0.3;
   
   // Current pose of the robot
@@ -151,7 +151,7 @@ void ControllerConstTrajectory::execute() {
     // ROS_INFO("Velocity : %f", vel);
 
     // Publish velocity command
-    cmd_vel_pub_.publish(cmd_vel);
+    // cmd_vel_pub_.publish(cmd_vel);
 
     ros::spinOnce();
     rate.sleep();
