@@ -50,7 +50,6 @@ class ReferenceStates():
 
     def compute_reference_states(self):
         """ ."""
-
         data = np.array(self.path)
 
         # Trajectory Length
@@ -64,11 +63,9 @@ class ReferenceStates():
         # Spline Size
         traj_size = int(self.traj_length/dist_step)
 
-        rospy.loginfo("TEST 1")
         # Spline
-        spline_curve, cv = self.make_spline_curve(0.5, 0.35, traj_size)
+        spline_curve, cv = self.make_spline_curve(0.5, 0.5, traj_size, insert_cv=True)
 
-        rospy.loginfo("TEST 2")
         x, y = spline_curve.T
 
         self.columns_size = len(x)
@@ -82,7 +79,6 @@ class ReferenceStates():
         ddy = np.gradient(dy)/np.gradient(time)
 
         states_ref = np.vstack((x, y, dx, dy, ddx, ddy))
-        rospy.loginfo("TEST 3")
 
         return states_ref
 
@@ -151,7 +147,7 @@ class ReferenceStates():
             x2 = cv[i][0]
             y2 = cv[i][1]
 
-            dist = self.distance((x1, y1), (x2, y2))
+            dist = self.distance(x1, y1, x2, y2)
             
             if dist > max_distance:
                 n = int(dist/max_distance)
@@ -175,6 +171,6 @@ class ReferenceStates():
         data = np.array(self.path)
         if insert_cv:
             data = self.insert_control_points(data, max_distance, tolerance)
-        spline_curve = b_spline(data, n=size, degree=3)
+        spline_curve = self.b_spline(data, n=size, degree=3)
 
         return spline_curve, data

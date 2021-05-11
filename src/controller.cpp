@@ -24,7 +24,7 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 
   vel_max_ = 0.35;
-  omega_max_ = 0.5;
+  omega_max_ = 0.75;
   vel_old_ = 0.0;
 
   // Controller Parameters
@@ -50,7 +50,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   double step = goal_distance_/ref_states_matrix_.cols();
 
   // TODO(BARRETO) rate is not constant?
-  ros::Rate rate(20);
+  ros::Rate rate(10);
 
   // ROS Time
   ros::Time zero_time = ros::Time::now();
@@ -172,18 +172,19 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   error_yaw_ = error_(2, 0);
 
   // Gains
-  k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  k_y_ = g_*vel_ref_;
-  k_yaw_ = k_x_;
+  // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  // k_y_ = g_*vel_ref_;
+  // k_yaw_ = k_x_;
 
-  ROS_INFO("k_x: %0.2f", k_x_);
-  ROS_INFO("k_y: %0.2f", k_y_);
-  ROS_INFO("k_yaw: %0.2f\n", k_yaw_);
+
   // Constants gains
-  // k_x_ = 3;
-  // k_y_ = 30;
-  //k_yaw_ = 15;
+  k_x_ = 3.0;
+  k_y_ = 5;
+  k_yaw_ = 10;
 
+  // ROS_INFO("k_x: %0.2f", k_x_);
+  // ROS_INFO("k_y: %0.2f", k_y_);
+  // ROS_INFO("k_yaw: %0.2f\n", k_yaw_);
   // Variable gain
   // k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
   // 
