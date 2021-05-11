@@ -155,6 +155,7 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   yaw_curr_ = pose_handler_.getYawFromQuaternion(curr_pose_.orientation);
   q_curr_ << curr_pose_.position.x, curr_pose_.position.y, yaw_curr_;
 
+
   // Transform to global coordinate
   tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
                    -sin(yaw_curr_), cos(yaw_curr_), 0.0,
