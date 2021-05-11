@@ -1,0 +1,11 @@
+<launch>
+    <!-- Visualization Tools -->
+    <include file="$(find visualization_tools)/launch/visual_tools.launch" />
+
+    <!-- <node pkg="trajectory_tracking_control" type="trajectory_tracking_control" name="controller_test_ideal_time_scaling"  output="screen">
+    </node> -->
+
+    <node pkg="trajectory_tracking_control" type="trajectory_tracking_control" name="trajectory_control"  output="screen">
+    </node>
+
+</launch>

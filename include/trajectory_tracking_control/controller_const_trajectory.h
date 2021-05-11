@@ -1,8 +1,7 @@
-
 // Copyright Rafael Barreto
 
-#ifndef TRAJECTORY_TRACKING_CONTROL_CONTROLLER_H_ // NOLINT
-#define TRAJECTORY_TRACKING_CONTROL_CONTROLLER_H_
+#ifndef TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_H_
+#define TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_H_
 
 #include <ros/ros.h>
 
@@ -12,6 +11,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseArray.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <nav_msgs/Odometry.h>
 
@@ -22,17 +22,10 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
 
 // Eigen
-// #include <Eigen/Core>
 #include <eigen3/Eigen/Core>
-
-// Action
-#include <actionlib/server/simple_action_server.h>
-#include <trajectory_tracking_control/ExecuteTrajectoryTrackingAction.h>
-
-// Service
-#include <trajectory_tracking_control/ComputeReferenceStates.h>
 
 #include <vector>
 #include <string>
@@ -41,46 +34,30 @@
 #include <boost/bind.hpp>
 
 using Eigen::MatrixXd;
+using Eigen::VectorXd;
 
 namespace trajectory_tracking_control {
 
-typedef actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajectoryTrackingAction>
-  ExecuteTrajectoryTrackingActionServer;
 
-
-class Controller {
+class ControllerConstTrajectory {
  public:
-  Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf);
+  ControllerConstTrajectory(ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf);
 
-  void executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
+  void execute();
 
-  void requestReferenceMatrix(const geometry_msgs::PoseArray &path, double vel_avg, double t_sampling);
+  void makeReferenceTrajectory(double freq, double x_offset, double y_offset, double A);
 
-  bool isGoalReached();
-
-  // TODO return bool?
-  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel); //NOLINT
-
-  virtual void updateReferenceState(int n);
-
-  void makeReferencePath();
+  void computeReferenceStates(double time, double freq,
+                             double x_offset, double y_offset, double A);
+  
 
  protected:
   PoseHandler pose_handler_;
-  std::string action_name_;
   ros::NodeHandle nh_;
-  ExecuteTrajectoryTrackingActionServer as_;
-  std::vector<geometry_msgs::Point> reference_trajectory_;
-
-  ExecuteTrajectoryTrackingFeedback feedback_;
-  ExecuteTrajectoryTrackingResult result_;
 
   // Reference Matrix
   MatrixXd ref_states_matrix_;
-
-  // Current Pose
-  geometry_msgs::Pose curr_pose_;
-
+  
   // Posture Error Matrix (3x1)
   MatrixXd error_;
 
@@ -114,23 +91,11 @@ class Controller {
   // Yaw angle
   double yaw_ref_, yaw_curr_;
 
-  ros::ServiceClient ref_states_srv_;
-
-  ros::Subscriber pose_sub_;
-
-  geometry_msgs::Point goal_position_;
-
+  // Publishers
   ros::Publisher ref_pose_pub_;
   ros::Publisher ref_path_pub_;
-
   ros::Publisher cmd_vel_pub_;
-
-  double goal_distance_;
-
-  double vel_old_, vel_ref_old_;
-
-  bool goal_reached_;
 };
 };  // namespace trajectory_tracking_control
 
-#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_H_ NOLINT
+#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_H_ 

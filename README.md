@@ -7,3 +7,8 @@ Code based on the algorithms presented in the Chapter 3 - Control of Wheeled Mob
 Systems of the book "Wheeled Mobile Robotics: From Fundamentals Towards Autonomous Systems".
 
 Using B-Spline Interpolation to generate reference trajectories.
+
+
+Test Node using fix curve
+
+![](docs/husky_controller.gif)

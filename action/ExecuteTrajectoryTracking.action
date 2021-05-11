@@ -1,6 +1,6 @@
 ### GOAL DEFINITION
 
-# Path Planning
+# Path Planning OR Trajectory
 geometry_msgs/PoseArray path
 
 # Average velocity of the route ([meter]/[second])
@@ -8,6 +8,9 @@ float32 average_velocity
 
 # Sampling time ([second])
 float32 sampling_time
+
+# if path is already a Trajectory set FALSE
+bool make_trajectory
 
 ---
 ### RESULT DEFINITION

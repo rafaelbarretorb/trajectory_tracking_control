@@ -4,20 +4,18 @@
 
 namespace trajectory_tracking_control {
 
-Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
+Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf) :
                        action_name_(name),
                        nh_(*nodehandle),
+                       pose_handler_(&tf), 
                        as_(nh_, name, boost::bind(&Controller::executeCB, this, _1), false) {
   as_.start();
 
   // Initialize matrices
-
   q_ref_ = MatrixXd(3, 1);
   q_curr_ = MatrixXd(3, 1);
   tf_to_global_ = MatrixXd(3, 3);
   error_ = MatrixXd(3, 1);
-
-  pose_sub_ = nh_.subscribe("/odometry/filtered", 100, &Controller::updateCurrentPoseCB, this);
 
   ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
@@ -25,9 +23,13 @@ Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle) :
 
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 
-  vel_max_ = 0.50;
-  omega_max_ = 0.4;
+  vel_max_ = 0.35;
+  omega_max_ = 0.75;
   vel_old_ = 0.0;
+
+  // Controller Parameters
+  g_ = 5.0;
+  zeta_ = 40.0;
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -41,19 +43,21 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   requestReferenceMatrix(goal->path, goal->average_velocity, goal->sampling_time);
 
   // Publish Reference path TODO(Rafael) here?
-  makeReferencePath();
+  pose_handler_.publishReferencePath(ref_states_matrix_, ref_path_pub_);
 
   geometry_msgs::Twist cmd_vel;
   int n;
   double step = goal_distance_/ref_states_matrix_.cols();
 
   // TODO(BARRETO) rate is not constant?
-  ros::Rate rate(20);
+  ros::Rate rate(10);
 
   // ROS Time
   ros::Time zero_time = ros::Time::now();
   ros::Duration delta_t;
-  double delta_t_sec;
+  double delta_t_sec, delta_t_finish;
+  ros::Time zero_time2 = ros::Time::now();
+  bool final = false;
 
   while (ros::ok() && !goal_reached_) {
     isGoalReached();
@@ -61,12 +65,25 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     delta_t = ros::Time::now() - zero_time;
     delta_t_sec = delta_t.toSec();
 
+    // ROS_INFO("Time: %2f", delta_t_sec);
+
     n = round(delta_t_sec/(goal->sampling_time));
     if (n > ref_states_matrix_.cols() - 1) {
       n = ref_states_matrix_.cols() - 1;
+
+      if (!final) {
+        zero_time2 = ros::Time::now();
+        final = true;
+      }
+
+      // Tmp: remove this
+      delta_t_finish = (ros::Time::now() - zero_time2).toSec();
+      if (delta_t_finish > 5.0)
+        goal_reached_ = true;
     }
 
-    if (computeVelocityCommands(cmd_vel, n)) {
+    updateReferenceState(n);
+    if (computeVelocityCommands(cmd_vel)) {
       // Publish cmd_vel
       cmd_vel_pub_.publish(cmd_vel);
 
@@ -92,12 +109,12 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   // Stop the robot
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
-  cmd_vel_pub_.publish(cmd_vel);
+  // cmd_vel_pub_.publish(cmd_vel);
 }
 
 bool Controller::isGoalReached() {
-  double distance = euclideanDistance(goal_position_.x, goal_position_.y,
-                                      robot_pose_.position.x, robot_pose_.position.y);
+  double distance = pose_handler_.euclideanDistance(goal_position_.x, goal_position_.y,
+                                      curr_pose_.position.x, curr_pose_.position.y);
   // TODO(BARRETO) remove after, hard coding
   double tolerance = 0.2;
 
@@ -108,47 +125,38 @@ bool Controller::isGoalReached() {
   }
 }
 
-void Controller::updateCurrentPoseCB(const nav_msgs::Odometry & msg) {
-  robot_pose_.position.x = msg.pose.pose.position.x;
-  robot_pose_.position.y = msg.pose.pose.position.y;
-
-  robot_pose_.orientation.x = msg.pose.pose.orientation.x;
-  robot_pose_.orientation.y = msg.pose.pose.orientation.y;
-  robot_pose_.orientation.z = msg.pose.pose.orientation.z;
-  robot_pose_.orientation.w = msg.pose.pose.orientation.w;
-}
-
-bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time_idx) {
-  double omega;
-  double vel;
-
-  x_ref_ = ref_states_matrix_(0, time_idx);
-  y_ref_ = ref_states_matrix_(1, time_idx);
-  dx_ref_ = ref_states_matrix_(2, time_idx);
-  dy_ref_ = ref_states_matrix_(3, time_idx);
-  ddx_ref_ = ref_states_matrix_(4, time_idx);
-  ddy_ref_ = ref_states_matrix_(5, time_idx);
+void Controller::updateReferenceState(int n) {
+  x_ref_ = ref_states_matrix_(0, n);
+  y_ref_ = ref_states_matrix_(1, n);
+  dx_ref_ = ref_states_matrix_(2, n);
+  dy_ref_ = ref_states_matrix_(3, n);
+  ddx_ref_ = ref_states_matrix_(4, n);
+  ddy_ref_ = ref_states_matrix_(5, n);
 
   yaw_ref_ = atan2(dy_ref_, dx_ref_);
 
+  // Reference Pose State
   q_ref_ << x_ref_, y_ref_, yaw_ref_;
 
-  // Publish reference pose
-  publishReferencePose(x_ref_, y_ref_, yaw_ref_);
-
-  yaw_curr_ = getYawFromQuaternion(robot_pose_.orientation);
-
-  q_curr_ << robot_pose_.position.x, robot_pose_.position.y, yaw_curr_;
-
+  // Reference Velocities
   vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
-  vel_ref_ = vel_ref_old_ - 0.5*(vel_ref_old_ - vel_ref_);
-
   omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
 
-  if (vel_ref_ < 0.0) {
-    vel_ref_ = 0.0;
-  }
+  // Publish reference pose
+  pose_handler_.publishReferencePose(x_ref_, y_ref_, yaw_ref_, ref_pose_pub_);
+}
 
+bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
+  double omega;
+  double vel;
+
+  // Update robot pose
+  curr_pose_ = pose_handler_.getRobotPose();
+  yaw_curr_ = pose_handler_.getYawFromQuaternion(curr_pose_.orientation);
+  q_curr_ << curr_pose_.position.x, curr_pose_.position.y, yaw_curr_;
+
+
+  // Transform to global coordinate
   tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
                    -sin(yaw_curr_), cos(yaw_curr_), 0.0,
                    0.0, 0.0, 1.0;
@@ -164,23 +172,27 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
   error_y_ = error_(1, 0);
   error_yaw_ = error_(2, 0);
 
-  // TODO(BARRETO) Hard coding for now
-  g_ = 1.5;
-  zeta_ = 45;
+  // Gains
+  // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  // k_y_ = g_*vel_ref_;
+  // k_yaw_ = k_x_;
 
-  k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  k_y_ = g_*vel_ref_;
-  k_yaw_ = k_x_;
 
+  // Constants gains
+  k_x_ = 3.0;
+  k_y_ = 5;
+  k_yaw_ = 10;
+
+  // ROS_INFO("k_x: %0.2f", k_x_);
+  // ROS_INFO("k_y: %0.2f", k_y_);
+  // ROS_INFO("k_yaw: %0.2f\n", k_yaw_);
+  // Variable gain
+  // k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+  // 
+
+  // Compute Velocities
   vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
-  vel = vel_old_ - 0.5*(vel_old_ - vel);
-
   omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
-
-  // Ensure that the linear velocity does not exceed the maximum allowed
-  if (vel > vel_max_) {
-    vel = vel_max_;
-  }
 
   // Ensure that the angular velocity does not exceed the maximum allowed
   if (fabs(omega) > omega_max_) {
@@ -191,13 +203,14 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel, int time
     vel = 0.0;
   }
 
+  
+  // Ensure that the linear velocity does not exceed the maximum allowed
+  if (vel > vel_max_) {
+    vel = vel_max_;
+  }
+
   cmd_vel.linear.x = vel;
   cmd_vel.angular.z = omega;
-
-  vel_old_ = vel;
-  vel_ref_old_ = vel_ref_;
-
-  ROS_INFO("Velocity: %f", vel);
 
   return true;
 }
@@ -233,53 +246,6 @@ void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, do
       ref_states_matrix_(row, col) = ref_states_arr.data[index];
     }
   }
-}
-
-double Controller::getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg) {
-  double roll, pitch, yaw;
-
-  tf2::Quaternion quat(quat_msg.x, quat_msg.y, quat_msg.z, quat_msg.w);
-  tf2::Matrix3x3 m(quat);
-  m.getRPY(roll, pitch, yaw);
-
-  return yaw;
-}
-
-void Controller::getRobotPoseFromTF2() {}
-
-double Controller::euclideanDistance(double x1, double y1, double x2, double y2) {
-  return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
-}
-
-void Controller::publishReferencePose(double x, double y, double yaw) {
-  geometry_msgs::PoseStamped pose;
-  pose.header.frame_id = "map";
-  pose.pose.position.x = x;
-  pose.pose.position.y = y;
-  pose.pose.position.z = 0.0;
-
-  tf2::Quaternion quat_tf;
-  geometry_msgs::Quaternion quat_msg;
-
-  quat_tf.setRPY(0, 0, yaw);
-  quat_tf.normalize();
-  quat_msg = tf2::toMsg(quat_tf);
-
-  // Set orientation
-  pose.pose.orientation = quat_msg;
-  ref_pose_pub_.publish(pose);
-}
-
-void Controller::makeReferencePath() {
-  geometry_msgs::PoseArray path;
-
-  for (int i = 0; i < ref_states_matrix_.cols(); ++i) {
-    geometry_msgs::Pose pose;
-    pose.position.x = ref_states_matrix_(0, i);
-    pose.position.y = ref_states_matrix_(1, i);
-    path.poses.push_back(pose);
-  }
-  ref_path_pub_.publish(path);
 }
 
 }  // namespace trajectory_tracking_control
