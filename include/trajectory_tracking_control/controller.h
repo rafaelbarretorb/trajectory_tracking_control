@@ -47,10 +47,12 @@ namespace trajectory_tracking_control {
 typedef actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajectoryTrackingAction>
   ExecuteTrajectoryTrackingActionServer;
 
-
 class Controller {
  public:
-  Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf);
+  Controller(const std::string &controller_type,
+             const std::string &action_name,
+             ros::NodeHandle *nodehandle,
+             tf2_ros::Buffer& tf);
 
   void executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
@@ -65,11 +67,15 @@ class Controller {
 
   void makeReferencePath();
 
+  void loadControllerParams();
+  
+  void displayControllerInfo();
+
  protected:
   PoseHandler pose_handler_;
   std::string action_name_;
   ros::NodeHandle nh_;
-  ExecuteTrajectoryTrackingActionServer as_;
+  ExecuteTrajectoryTrackingActionServer action_server_;
   std::vector<geometry_msgs::Point> reference_trajectory_;
 
   ExecuteTrajectoryTrackingFeedback feedback_;
@@ -127,9 +133,17 @@ class Controller {
 
   double goal_distance_;
 
-  double vel_old_, vel_ref_old_;
+  double vel_old_{0.0};
 
-  bool goal_reached_;
+  bool goal_reached_{false};
+
+  bool constant_gains_{false};
+
+  bool constant_trajectory_{false};
+
+  double xy_goal_tolerance_;
+
+  const std::string controller_type_;
 };
 };  // namespace trajectory_tracking_control
 

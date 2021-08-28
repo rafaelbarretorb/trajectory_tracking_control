@@ -1,0 +1,22 @@
+controller_type: "Linear"
+
+# Linear Controller
+Linear:
+  constant_gains: true
+  k_x: 3.0
+  k_y: 5.0
+  k_yaw: 10.0
+  g: 85  # g > 0
+  zeta: 0.9
+  vel_max_x: 0.35  # m/s
+  max_rot_vel: 0.75  # rad/s
+  xy_goal_tolerance: 0.2
+  constant_trajectory: true
+
+# Lyapunov-Based Control
+Lyapunov:
+  k: 0.0
+
+# Model-based Predictive Control
+MPC:
+  k: 0.0

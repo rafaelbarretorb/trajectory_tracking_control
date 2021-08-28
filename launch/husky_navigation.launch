@@ -5,7 +5,7 @@
 
   <!-- Husky Gazebo -->
   <!-- <include file="$(find husky_gazebo)/launch/husky_playpen.launch" /> -->
-  <include file="$(find lar_gazebo)/src/launch/lar_husky.launch" />
+  <!-- <include file="$(find lar_gazebo)/src/launch/lar_husky.launch" /> -->
 
   <!-- Move Base, AMCL, Map Server, etc -->
   <include file="$(find husky_navigation)/launch/amcl_demo.launch">

@@ -2,17 +2,18 @@
 
 <launch>
     <!-- path server launch file -->
-    <node pkg="goals_sequence_path_planner" type="path_planning_server" name="seq_path_planner_server" output="screen">
-    </node>
+    <!-- <node pkg="goals_sequence_path_planner" type="path_planning_server" name="seq_path_planner_server" output="screen">
+    </node> -->
 
     <!-- Controller Server -->
-    <node pkg="trajectory_tracking_control" type="trajectory_tracking_control" name="trajectory_control"  output="screen">
+    <node pkg="trajectory_tracking_control" type="trajectory_tracking_control" name="controller"  output="screen">
+        <rosparam command="load" file="$(find trajectory_tracking_control)/config/controller_parameters.yaml"/>
     </node>
 
     <!-- Reference State Service-->
-    <node pkg="trajectory_tracking_control" type="reference_states_srv_server" name="reference_states_server"  output="screen">
-    </node>
+    <!-- <node pkg="trajectory_tracking_control" type="reference_states_srv_server" name="reference_states_server"  output="screen">
+    </node> -->
 
     <!-- Visualization Tools -->
-    <include file="$(find visualization_tools)/launch/visual_tools.launch" />
+    <!-- <include file="$(find visualization_tools)/launch/visual_tools.launch" /> -->
 </launch>

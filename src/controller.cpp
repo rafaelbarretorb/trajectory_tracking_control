@@ -1,35 +1,41 @@
 // Copyright 2020
 
-#include <trajectory_tracking_control/controller.h>
+#include "trajectory_tracking_control/controller.h"
 
 namespace trajectory_tracking_control {
 
-Controller::Controller(const std::string &name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf) :
-                       action_name_(name),
-                       nh_(*nodehandle),
-                       pose_handler_(&tf), 
-                       as_(nh_, name, boost::bind(&Controller::executeCB, this, _1), false) {
-  as_.start();
+Controller::Controller(const std::string &controller_type,
+                       const std::string &action_name,
+                       ros::NodeHandle *nodehandle,
+                       tf2_ros::Buffer& tf) : controller_type_(controller_type),
+                                              action_name_(action_name),
+                                              nh_(*nodehandle),
+                                              pose_handler_(&tf), 
+                                              action_server_(nh_,
+                                                             action_name_,
+                                                             boost::bind(&Controller::executeCB, this, _1), false) {
+  action_server_.start();
 
+  //Load controller parameters
+  loadControllerParams();
+
+  // Display controller info
+  displayControllerInfo();
+  
   // Initialize matrices
   q_ref_ = MatrixXd(3, 1);
   q_curr_ = MatrixXd(3, 1);
   tf_to_global_ = MatrixXd(3, 3);
   error_ = MatrixXd(3, 1);
 
+  // TODO create a new method for this
+  // Initialize Publishers
   ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
 
+  // Reference States Service
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
-
-  vel_max_ = 0.35;
-  omega_max_ = 0.75;
-  vel_old_ = 0.0;
-
-  // Controller Parameters
-  g_ = 5.0;
-  zeta_ = 40.0;
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -94,7 +100,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     // Feedback
     feedback_.mission_status = "PROGRESS";
     feedback_.distance_traveled_percentage = 100*n*step/goal_distance_;
-    as_.publishFeedback(feedback_);
+    action_server_.publishFeedback(feedback_);
 
     rate.sleep();
   }
@@ -103,7 +109,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     result_.distance_traveled_percentage = feedback_.distance_traveled_percentage;
     result_.mission_status = "SUCCEED";
     ROS_INFO("%s: Succeeded", action_name_.c_str());
-    as_.setSucceeded(result_);
+    action_server_.setSucceeded(result_);
   }
 
   // Stop the robot
@@ -115,10 +121,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
 bool Controller::isGoalReached() {
   double distance = pose_handler_.euclideanDistance(goal_position_.x, goal_position_.y,
                                       curr_pose_.position.x, curr_pose_.position.y);
-  // TODO(BARRETO) remove after, hard coding
-  double tolerance = 0.2;
-
-  if (distance < tolerance) {
+  if (distance < xy_goal_tolerance_) {
     goal_reached_ = true;
   } else {
     goal_reached_ = false;
@@ -172,23 +175,12 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   error_y_ = error_(1, 0);
   error_yaw_ = error_(2, 0);
 
-  // Gains
-  // k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  // k_y_ = g_*vel_ref_;
-  // k_yaw_ = k_x_;
-
-
-  // Constants gains
-  k_x_ = 3.0;
-  k_y_ = 5;
-  k_yaw_ = 10;
-
-  // ROS_INFO("k_x: %0.2f", k_x_);
-  // ROS_INFO("k_y: %0.2f", k_y_);
-  // ROS_INFO("k_yaw: %0.2f\n", k_yaw_);
-  // Variable gain
-  // k_yaw_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  // 
+  if (!constant_gains_) {
+    // Variable gains
+    k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+    k_y_ = g_*vel_ref_;
+    k_yaw_ = k_x_;
+  }
 
   // Compute Velocities
   vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
@@ -202,7 +194,6 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   if (vel < 0.0){
     vel = 0.0;
   }
-
   
   // Ensure that the linear velocity does not exceed the maximum allowed
   if (vel > vel_max_) {
@@ -245,6 +236,49 @@ void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, do
       index = row*matrix_columns_size + col;
       ref_states_matrix_(row, col) = ref_states_arr.data[index];
     }
+  }
+}
+
+// TODO Create a new class called LinearController
+void Controller::loadControllerParams() {
+  ros::NodeHandle private_nh("~");
+
+  private_nh.getParam(controller_type_ + "/" + "constant_gains", constant_gains_);
+  private_nh.getParam(controller_type_ + "/" + "k_x", k_x_);
+  private_nh.getParam(controller_type_ + "/" + "k_y", k_y_);
+  private_nh.getParam(controller_type_ + "/" + "k_yaw", k_yaw_);
+  private_nh.getParam(controller_type_ + "/" + "g", g_);
+  private_nh.getParam(controller_type_ + "/" + "zeta", zeta_);
+  private_nh.getParam(controller_type_ + "/" + "vel_max_x", vel_max_);
+  private_nh.getParam(controller_type_ + "/" + "max_rot_vel", omega_max_);
+  private_nh.getParam(controller_type_ + "/" + "constant_trajectory", constant_trajectory_);
+  private_nh.getParam(controller_type_ + "/" + "xy_goal_tolerance", xy_goal_tolerance_);
+
+  if (g_ < 0.0) {
+    ROS_ERROR("Invalid design parameter.");
+    throw std::invalid_argument( "The designer parameter g received a negative value.");
+  }
+}
+
+void Controller::displayControllerInfo() {
+  ROS_INFO("%s Controller Parameters: ", controller_type_.c_str());
+
+  if (constant_gains_) {
+    ROS_INFO("Constant gains values: ");
+    ROS_INFO("Gain k_x: %2f", k_x_);
+    ROS_INFO("Gain k_y: %2f", k_y_);
+    ROS_INFO("Gain k_yaw: %2f", k_yaw_);
+  } else {
+    ROS_INFO("Design parameter g: %2f", g_);
+    ROS_INFO("Design parameter zeta: %2f", zeta_);
+  }
+
+  ROS_INFO("Maximum linear velocity: %2f", vel_max_);
+  ROS_INFO("Maximum angular velocity: %2f", omega_max_);
+  ROS_INFO("Goal xy tolerance: %2f", xy_goal_tolerance_);
+
+  if (constant_trajectory_) {
+    ROS_WARN("Set constant trajectory.");
   }
 }
 
