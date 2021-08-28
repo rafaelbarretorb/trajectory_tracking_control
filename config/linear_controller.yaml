@@ -1,0 +1,10 @@
+trajectory_controller:
+  constant_gains: false
+  k_x: 3.0
+  k_y: 5.0
+  k_yaw: 10.0
+  vel_max_x: 0.35  # m/s
+  max_rot_vel: 0.75  # rad/s
+  g: 85
+  zeta: 0.9
+  constant_trajectory: false
