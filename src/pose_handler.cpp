@@ -55,7 +55,7 @@ void PoseHandler::publishReferencePose(double x, double y, double yaw,
   pub.publish(pose);
 }
 
-void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix,const ros::Publisher &pub) {
+void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix, const ros::Publisher &pub) {
   geometry_msgs::PoseArray path;
 
   for (int i = 0; i < ref_states_matrix.cols(); ++i) {
