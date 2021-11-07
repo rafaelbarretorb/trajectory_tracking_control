@@ -1,9 +1,11 @@
 // Copyright 2020
 #include <ros/ros.h>
-#include "trajectory_tracking_control/controller.h"
+
 // #include<trajectory_tracking_control/controller_const_trajectory.h>
 #include <tf2_ros/transform_listener.h>
 #include <string>
+
+#include "trajectory_tracking_control/controller.hpp"
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "trajectory_controller_node");

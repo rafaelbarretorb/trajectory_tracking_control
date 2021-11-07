@@ -1,12 +1,12 @@
 
 // Copyright Rafael Barreto
 
-#ifndef TRAJECTORY_TRACKING_CONTROL_CONTROLLER_H_ // NOLINT
-#define TRAJECTORY_TRACKING_CONTROL_CONTROLLER_H_
+#ifndef TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_
+#define TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_
 
 #include <ros/ros.h>
 
-#include <trajectory_tracking_control/pose_handler.h>
+
 
 // Messages
 #include <geometry_msgs/Point.h>
@@ -40,10 +40,14 @@
 
 #include <boost/bind.hpp>
 
+#include "trajectory_tracking_control/pose_handler.hpp"
+
 using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
 
+
+// TODO change for alias
 typedef actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajectoryTrackingAction>
   ExecuteTrajectoryTrackingActionServer;
 
@@ -145,6 +149,6 @@ class Controller {
 
   const std::string controller_type_;
 };
-};  // namespace trajectory_tracking_control
+}  // namespace trajectory_tracking_control
 
-#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_H_ NOLINT
+#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_ NOLINT

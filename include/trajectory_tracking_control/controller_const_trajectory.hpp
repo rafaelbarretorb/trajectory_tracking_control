@@ -1,11 +1,11 @@
 // Copyright Rafael Barreto
 
-#ifndef TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_H_
-#define TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_H_
+#ifndef TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_HPP_
+#define TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_HPP_
 
 #include <ros/ros.h>
 
-#include <trajectory_tracking_control/pose_handler.h>
+#include "trajectory_tracking_control/pose_handler.hpp"
 
 // Messages
 #include <geometry_msgs/Point.h>
@@ -96,6 +96,6 @@ class ControllerConstTrajectory {
   ros::Publisher ref_path_pub_;
   ros::Publisher cmd_vel_pub_;
 };
-};  // namespace trajectory_tracking_control
+}  // namespace trajectory_tracking_control
 
-#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_H_ 
+#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_CONST_TRAJECTORY_HPP_ 

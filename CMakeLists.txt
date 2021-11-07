@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.1.3)
 project(trajectory_tracking_control)
 
-set(CMAKE_CXX_STANDARD 11)
+# TODO chech install action messages to avoid repeat catkin_make
+
+set(CMAKE_CXX_STANDARD 17)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp

@@ -1,4 +1,5 @@
-#include <trajectory_tracking_control/controller_const_trajectory.h>
+
+#include <trajectory_tracking_control/controller_const_trajectory.hpp"
 
 namespace trajectory_tracking_control {
 

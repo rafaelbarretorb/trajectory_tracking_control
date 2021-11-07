@@ -1,6 +1,6 @@
 // Copyright 2020
 
-#include "trajectory_tracking_control/controller.h"
+#include "trajectory_tracking_control/controller.hpp"
 
 namespace trajectory_tracking_control {
 
@@ -119,13 +119,10 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
 }
 
 bool Controller::isGoalReached() {
-  double distance = pose_handler_.euclideanDistance(goal_position_.x, goal_position_.y,
-                                      curr_pose_.position.x, curr_pose_.position.y);
-  if (distance < xy_goal_tolerance_) {
-    goal_reached_ = true;
-  } else {
-    goal_reached_ = false;
-  }
+  return (euclideanDistance2D(goal_position_.x,
+                              goal_position_.y,
+                              curr_pose_.position.x,
+                              curr_pose_.position.y) < xy_goal_tolerance_) ? true : false;
 }
 
 void Controller::updateReferenceState(int n) {

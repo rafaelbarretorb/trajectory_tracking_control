@@ -1,7 +1,7 @@
 // Copyright Rafael Barreto
 
-#ifndef TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_H_ // NOLINT
-#define TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_H_
+#ifndef TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_HPP_
+#define TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_HPP_
 
 #include <ros/ros.h>
 
@@ -30,6 +30,7 @@ using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
 
+inline float euclideanDistance2D(float x1, float y1, float x2, float y2) { return std::hypot((x1 - x2), (y1 - y2)); }
 
 class PoseHandler {
  public:
@@ -38,8 +39,6 @@ class PoseHandler {
   const geometry_msgs::Pose &getRobotPose();
 
   double getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg);
-
-  double euclideanDistance(double x1, double y1, double x2, double y2);
 
   void publishReferencePose(double x, double y, double yaw, const ros::Publisher &pub);
 
@@ -58,6 +57,6 @@ class PoseHandler {
 	geometry_msgs::Pose robot_pose_;
 
 };
-};  // namespace trajectory_tracking_control
+}  // namespace trajectory_tracking_control
 
-#endif  // TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_H_ NOLINT
+#endif  // TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_HPP_ NOLINT
