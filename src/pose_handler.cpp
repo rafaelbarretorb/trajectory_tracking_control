@@ -3,8 +3,10 @@
 
 namespace trajectory_tracking_control {
 
-PoseHandler::PoseHandler(tf2_ros::Buffer* tf) : tf_(tf), tfl_(*tf_) {
+// TODO tfl_??
 
+PoseHandler::PoseHandler(tf2_ros::Buffer* tf) : tf_(tf), tfl_(*tf_) {
+  // TODO remove
   odom_frame_ = "odom";
   global_frame_ = "map";
   robot_base_frame_ = "base_link";
@@ -43,6 +45,8 @@ void PoseHandler::publishReferencePose(double x, double y, double yaw,
   pose.pose.position.x = x;
   pose.pose.position.y = y;
   pose.pose.position.z = 0.0;
+
+  // TODO make a function
 
   tf2::Quaternion quat_tf;
   geometry_msgs::Quaternion quat_msg;

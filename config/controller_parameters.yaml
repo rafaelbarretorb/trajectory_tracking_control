@@ -2,7 +2,7 @@ controller_type: "Linear"
 
 # Linear Controller
 Linear:
-  constant_gains: true
+  const_gains: true
   k_x: 3.0
   k_y: 5.0
   k_yaw: 10.0
@@ -11,7 +11,7 @@ Linear:
   vel_max_x: 0.35  # m/s
   max_rot_vel: 0.75  # rad/s
   xy_goal_tolerance: 0.2
-  constant_trajectory: true
+  const_reference_trajectory: true
 
 # Lyapunov-Based Control
 Lyapunov:

@@ -174,7 +174,7 @@ void ControllerConstTrajectory::makeReferenceTrajectory(double freq, double x_of
   // Just making a reference path to Rviz
   int N = 150;
 
-  double Ts = 0.5;  
+  double Ts = 0.5;
 
   // Just two rows
   MatrixXd m(2, N);
@@ -186,4 +186,4 @@ void ControllerConstTrajectory::makeReferenceTrajectory(double freq, double x_of
   ref_states_matrix_ = m;
 }
 
-} // namespace trajectory_tracking_control
+}  // namespace trajectory_tracking_control
