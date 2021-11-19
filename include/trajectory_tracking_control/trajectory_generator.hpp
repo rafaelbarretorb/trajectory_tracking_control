@@ -65,7 +65,7 @@ class TrajectoryGenerator {
       ref_states_arr = srv.response.data;
       matrix_rows_size = srv.response.rows_size;
       matrix_columns_size = srv.response.columns_size;
-      goal_distance_ = srv.response.goal_distance; /// TODO
+      goal_distance_ = srv.response.goal_distance;
 
     } else {
       ROS_ERROR("Failed to call service Coverage Path Planning");
@@ -86,7 +86,7 @@ class TrajectoryGenerator {
  private:
   bool const_trajectory_{false};
   ros::ServiceClient ref_states_srv_;
-  double goal_distance_;
+  double goal_distance_;  // TODO(Rafael) DO I need this?
 };
 
 }  // namespace trajectory_tracking_control

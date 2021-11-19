@@ -107,6 +107,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     rate.sleep();
   }
 
+  // TODO(Rafael) check this if???
   if (goal_distance_) {
     result_.distance_traveled_percentage = feedback_.distance_traveled_percentage;
     result_.mission_status = "SUCCEED";
