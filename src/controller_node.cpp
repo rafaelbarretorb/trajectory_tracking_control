@@ -8,7 +8,7 @@
 #include "trajectory_tracking_control/controller.hpp"
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "trajectory_controller_node");
+  ros::init(argc, argv, "trajectory_controller");
   ros::NodeHandle nh;
 
   tf2_ros::Buffer buffer;
@@ -22,7 +22,11 @@ int main(int argc, char **argv) {
     trajectory_tracking_control::Controller controller(controller_type, "trajectory_tracking_control", &nh, buffer);
   }
 
-  if (controller_type.compare("MPC") == 0) {}
+  if (controller_type.compare("MPC") == 0) {
+    ROS_INFO("Controller type: %s", controller_type.c_str());
+
+    // TODO(Rafael)
+  }
 
   ros::spin();
   return 0;

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1.3)
 project(trajectory_tracking_control)
 
-# TODO chech install action messages to avoid repeat catkin_make
+# TODO check install action messages to avoid repeat catkin_make
 
 set(CMAKE_CXX_STANDARD 17)
 
