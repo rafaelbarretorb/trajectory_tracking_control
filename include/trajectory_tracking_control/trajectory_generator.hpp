@@ -21,9 +21,9 @@ class TrajectoryGenerator {
  public:
   TrajectoryGenerator() = default;
 
-  void makeConstantTrajectory(MatrixXd &ref_states_matrix,  // NOLINT
-                              double vel_avg,
-                              double t_sampling) {
+  void makeConstantTrajectory(double vel_avg,
+                              double t_sampling,
+                              MatrixXd &ref_states_matrix) {  // NOLINT
     // TODO(Rafael) remove hard coding
     double A = 3.0;
     double x_offset = 2.0;

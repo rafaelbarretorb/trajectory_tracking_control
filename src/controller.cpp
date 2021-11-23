@@ -1,11 +1,12 @@
-// Copyright 2020
+/*
+  Copyright 2021 - Rafael Barreto
+*/
 
 #include "trajectory_tracking_control/controller.hpp"
 
 namespace trajectory_tracking_control {
 
 
-// TODO switch boost to std
 Controller::Controller(const std::string &controller_type,
                        const std::string &action_name,
                        ros::NodeHandle *nodehandle,
@@ -18,19 +19,19 @@ Controller::Controller(const std::string &controller_type,
                                                              boost::bind(&Controller::executeCB, this, _1), false) {
   action_server_.start();
 
-  //Load controller parameters
+  // Load controller parameters
   loadControllerParams();
 
   // Display controller info
   displayControllerInfo();
-  
+
   // Initialize matrices
   q_ref_ = MatrixXd(3, 1);
   q_curr_ = MatrixXd(3, 1);
   tf_to_global_ = MatrixXd(3, 3);
   error_ = MatrixXd(3, 1);
 
-  // TODO create a new method for this
+  // TODO(Rafael) create a new method for this
   // Initialize Publishers
   ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
@@ -43,12 +44,17 @@ Controller::Controller(const std::string &controller_type,
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   // Set goal reached false
   goal_reached_ = false;
+
   // Set goal position
   goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
   goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
 
-  // Request Reference Matrix
-  requestReferenceMatrix(goal->path, goal->average_velocity, goal->sampling_time);
+  // Make trajectory
+  if (goal->const_trajectory) {
+    traj_gen_.makeConstantTrajectory(goal->average_velocity, goal->sampling_time, ref_states_matrix_);
+  } else {
+    traj_gen_.makeTrajectory(goal->path, goal->average_velocity, goal->sampling_time, ref_states_matrix_);
+  }
 
   // Publish Reference path TODO(Rafael) here?
   pose_handler_.publishReferencePath(ref_states_matrix_, ref_path_pub_);
@@ -191,10 +197,10 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
     omega = copysign(omega_max_, omega);
   }
 
-  if (vel < 0.0){
+  if (vel < 0.0) {
     vel = 0.0;
   }
-  
+
   // Ensure that the linear velocity does not exceed the maximum allowed
   if (vel > vel_max_) {
     vel = vel_max_;
@@ -204,39 +210,6 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   cmd_vel.angular.z = omega;
 
   return true;
-}
-
-void Controller::requestReferenceMatrix(const geometry_msgs::PoseArray &path, double vel_avg, double t_sampling) {
-  // Request Service
-  trajectory_tracking_control::ComputeReferenceStates srv;
-  srv.request.path = path;
-  srv.request.average_velocity = vel_avg;
-  srv.request.sampling_time = t_sampling;
-
-  std_msgs::Float32MultiArray ref_states_arr;
-  int matrix_rows_size, matrix_columns_size;
-
-  if (ref_states_srv_.call(srv)) {
-    // get the service response
-    ref_states_arr = srv.response.data;
-    matrix_rows_size = srv.response.rows_size;
-    matrix_columns_size = srv.response.columns_size;
-    goal_distance_ = srv.response.goal_distance;
-
-  } else {
-    ROS_ERROR("Failed to call service Coverage Path Planning");
-  }
-
-  // Initialize the matrix
-  ref_states_matrix_ = MatrixXd(matrix_rows_size, matrix_columns_size);
-
-  int index;
-  for (int row = 0; row < matrix_rows_size; ++row) {
-    for (int col = 0; col < matrix_columns_size; ++col) {
-      index = row*matrix_columns_size + col;
-      ref_states_matrix_(row, col) = ref_states_arr.data[index];
-    }
-  }
 }
 
 // TODO Create a new class called LinearController
@@ -256,7 +229,7 @@ void Controller::loadControllerParams() {
 
   if (g_ < 0.0) {
     ROS_ERROR("Invalid design parameter.");
-    throw std::invalid_argument( "The designer parameter g received a negative value.");
+    throw std::invalid_argument("The designer parameter g received a negative value.");
   }
 }
 

@@ -41,11 +41,12 @@
 #include <boost/bind.hpp>
 
 #include "trajectory_tracking_control/pose_handler.hpp"
+#include "trajectory_tracking_control/trajectory_generator.hpp"
+
 
 using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
-
 
 // TODO change for alias
 typedef actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajectoryTrackingAction>
@@ -60,16 +61,12 @@ class Controller {
 
   void executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
-  void requestReferenceMatrix(const geometry_msgs::PoseArray &path, double vel_avg, double t_sampling);
-
   bool isGoalReached();
 
   // TODO return bool?
   bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel); //NOLINT
 
   virtual void updateReferenceState(int n);
-
-  void makeReferencePath();
 
   void loadControllerParams();
   
@@ -148,6 +145,8 @@ class Controller {
   double xy_goal_tolerance_;
 
   const std::string controller_type_;
+
+  TrajectoryGenerator traj_gen_;
 };
 }  // namespace trajectory_tracking_control
 
