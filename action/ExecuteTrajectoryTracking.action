@@ -1,5 +1,8 @@
 ### GOAL DEFINITION
 
+# if trajectory is constant or not
+bool const_trajectory
+
 # Path Planning OR Trajectory
 geometry_msgs/PoseArray path
 
