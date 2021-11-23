@@ -1,0 +1,2 @@
+// class MPC {};
+class ModelPredictiveControl {};
