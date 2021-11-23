@@ -1,15 +1,25 @@
 ## ```trajectory_tracking_control```
 
-ROS Trajectory Tracking Control of differential drive using Kinematic Trajectory-Tracking
-Error Model
-
-Code based on the algorithms presented in the Chapter 3 - Control of Wheeled Mobile
-Systems of the book "Wheeled Mobile Robotics: From Fundamentals Towards Autonomous Systems".
+ROS Trajectory Tracking Control package for differential drive and skid-steer drive mobile robots.
 
 Using B-Spline Interpolation to generate reference trajectories.
 
+### References
 
-Test Node using fix curve
+- Books:
+  - "Wheeled Mobile Robotics: From Fundamentals Towards Autonomous Systems".
+
+- Articles:
+  - s
+
+### Design types developped:
+✅ Linear Control
+
+⬜️ Lyapunov-Based Control
+
+⬜️ Model-Based Predictive Control
+
+
 
 ![](docs/husky_controller.gif)
 
