@@ -14,6 +14,7 @@ Using B-Spline Interpolation to generate reference trajectories.
 
 ### Design types developped:
 ✅ Linear Control
+:heavy_check_mark: Linear Control
 
 ⬜️ Lyapunov-Based Control
 
