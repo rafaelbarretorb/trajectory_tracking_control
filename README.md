@@ -11,8 +11,8 @@ Using B-Spline Interpolation to generate reference trajectories.
 
 - Articles:
   - s
-
-### Design types developped:
+### Project plan
+#### Design types developped:
 
 :heavy_check_mark: Linear Control
 
@@ -21,6 +21,12 @@ Using B-Spline Interpolation to generate reference trajectories.
 ⬜️ Model-Based Predictive Control
 
 
+#### Handle Obstacles:
+⬜️ handle unknown obstacles in the trajectory seen by the perception sensors
+
+⬜️ Add dynamic reconfiguration
+
+⬜️ Add others methods to generate trajectories
 
 ![](docs/husky_controller.gif)
 
