@@ -48,22 +48,18 @@ using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
 
-// TODO change for alias
-typedef actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajectoryTrackingAction>
-  ExecuteTrajectoryTrackingActionServer;
+using ExecuteTrajectoryTrackingActionServer = 
+  actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajectoryTrackingAction>;
+
 
 class Controller {
  public:
-  Controller(const std::string &controller_type,
-             const std::string &action_name,
-             ros::NodeHandle *nodehandle,
-             tf2_ros::Buffer& tf);
+  Controller(std::string action_name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf_buffer);
 
   void executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
   bool isGoalReached();
 
-  // TODO return bool?
   bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel); //NOLINT
 
   virtual void updateReferenceState(int n);
@@ -144,7 +140,8 @@ class Controller {
 
   double xy_goal_tolerance_;
 
-  const std::string controller_type_;
+  // TODO(Rafael) remove and set it from action msg
+  std::string controller_type_{std::string("Linear")};
 
   TrajectoryGenerator traj_gen_;
 };

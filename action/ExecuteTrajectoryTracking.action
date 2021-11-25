@@ -1,20 +1,24 @@
 ### GOAL DEFINITION
 
+string control_method
+string LINEAR = 1 
+string LYAPUNOV = 2
+string MPC = 3
+
 # if trajectory is constant or not
 bool const_trajectory
 
-# Path Planning OR Trajectory
+# Path Planning OR Reference Trajectory
 geometry_msgs/PoseArray path
+
+# if path is already a Trajectory set FALSE
+bool make_trajectory
 
 # Average velocity of the route ([meter]/[second])
 float32 average_velocity
 
 # Sampling time ([second])
 float32 sampling_time
-
-# if path is already a Trajectory set FALSE
-bool make_trajectory
-
 ---
 ### RESULT DEFINITION
 int32 distance_traveled_percentage

@@ -7,16 +7,15 @@
 namespace trajectory_tracking_control {
 
 
-Controller::Controller(const std::string &controller_type,
-                       const std::string &action_name,
+Controller::Controller(std::string action_name,
                        ros::NodeHandle *nodehandle,
-                       tf2_ros::Buffer& tf) : controller_type_(controller_type),
-                                              action_name_(action_name),
-                                              nh_(*nodehandle),
-                                              pose_handler_(&tf),
-                                              action_server_(nh_,
-                                                             action_name_,
-                                                             boost::bind(&Controller::executeCB, this, _1), false) {
+                       tf2_ros::Buffer& tf_buffer) : action_name_(action_name),
+                                                     nh_(*nodehandle),
+                                                     pose_handler_(&tf_buffer),
+                                                     action_server_(nh_,
+                                                                    action_name_,
+                                                                    boost::bind(&Controller::executeCB, this, _1),
+                                                                    false) {
   action_server_.start();
 
   // Load controller parameters
