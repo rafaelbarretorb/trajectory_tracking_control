@@ -1,5 +1,7 @@
 ## ```trajectory_tracking_control```
 
+![](docs/husky_controller.gif)
+
 ROS Trajectory Tracking Control package for differential drive and skid-steer drive mobile robots.
 
 Using B-Spline Interpolation to generate reference trajectories.
@@ -28,7 +30,10 @@ Using B-Spline Interpolation to generate reference trajectories.
 
 ⬜️ Add others methods to generate trajectories
 
-![](docs/husky_controller.gif)
+#### Launch
+
+```
+```
 
 ### 1. NODES
 
