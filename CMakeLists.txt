@@ -5,17 +5,18 @@ project(trajectory_tracking_control)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(catkin REQUIRED COMPONENTS
+find_package(catkin REQUIRED
+  COMPONENTS
   roscpp
   rospy
   std_msgs
   geometry_msgs
   actionlib
   actionlib_msgs
-  message_generation
   tf2
   tf2_ros
   tf2_geometry_msgs
+  message_generation
 )
 
 find_package(Boost REQUIRED COMPONENTS system)
@@ -25,11 +26,13 @@ find_package(Eigen3 REQUIRED)
 catkin_python_setup()
 
 add_service_files(DIRECTORY srv
-  FILES ComputeReferenceStates.srv
+  FILES
+  ComputeReferenceStates.srv
 )
 
 add_action_files(DIRECTORY action
-	FILES ExecuteTrajectoryTracking.action
+	FILES
+  ExecuteTrajectoryTracking.action
 )
 
 generate_messages(
@@ -52,6 +55,7 @@ catkin_package(
     tf2
     tf2_ros
     tf2_geometry_msgs
+    message_runtime
 )
 
 include_directories(
@@ -60,13 +64,23 @@ include_directories(
   ${Eigen3_INCLUDE_DIRS}
 )
 
-add_executable(
-  trajectory_tracking_control
+add_library(
+  trajectory_controller_lib
   src/controller_node.cpp
   src/pose_handler.cpp
   src/controller.cpp
   src/trajectory_generator.cpp
 )
 
-## Specify libraries to link a library or executable target against
-target_link_libraries(trajectory_tracking_control  ${catkin_LIBRARIES})
+add_dependencies(trajectory_controller_lib ${${PROJECT_NAME}_EXPORTED_TARGETS})
+
+add_executable(
+  trajectory_controller
+  src/controller_node.cpp
+)
+
+target_link_libraries(
+  trajectory_controller
+  trajectory_controller_lib
+  ${catkin_LIBRARIES}
+)
