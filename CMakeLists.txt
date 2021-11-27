@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Boost REQUIRED COMPONENTS system)
+
 find_package(Eigen3 REQUIRED)
 
 catkin_python_setup()
@@ -40,8 +41,6 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS
-    include
-    ## This is only necessary because Eigen3 sets a non-standard EIGEN3_INCLUDE_DIR variable
     ${EIGEN3_INCLUDE_DIR}
   CATKIN_DEPENDS
     roscpp
@@ -56,11 +55,9 @@ catkin_package(
 )
 
 include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
-
-    # Set manually because Eigen sets a non standard INCLUDE DIR
-    ${Eigen3_INCLUDE_DIRS}
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )
 
 add_executable(
@@ -68,8 +65,7 @@ add_executable(
   src/controller_node.cpp
   src/pose_handler.cpp
   src/controller.cpp
-#   src/controller_test_node.cpp
-#   src/test_localization.cpp
+  src/trajectory_generator.cpp
 )
 
 ## Specify libraries to link a library or executable target against
