@@ -69,6 +69,7 @@ void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix, const 
     pose.position.y = ref_states_matrix(1, i);
     path.poses.push_back(pose);
   }
+
   pub.publish(path);
 }
 

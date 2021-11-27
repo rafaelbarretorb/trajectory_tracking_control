@@ -21,29 +21,29 @@ class TrajectoryGenerator {
  public:
   TrajectoryGenerator() = default;
 
-  void makeConstantTrajectory(double vel_avg,
+  void makeConstantTrajectory(double vel_avg,  // TODO(RAFael) not using vel_avg
                               double t_sampling,
                               MatrixXd &ref_states_matrix) {  // NOLINT
     // TODO(Rafael) remove hard coding
     double A = 3.0;
-    double x_offset = 2.0;
+    double x_offset = 1.0;
     double y_offset = 0.0;
-    double freq = 2*M_PI/60;
-    int N = 150;
+    int N = 60;
+    double freq = 2*M_PI/N;  // omega, not freq
+    int m = N/t_sampling;
 
-    double Ts = 0.5;
     double time;
 
     // Just two rows
-    MatrixXd ref_states_matrix_(6, N);
-    for (int i = 0; i < N; ++i) {
-      time = i*Ts;
-      ref_states_matrix_(0, i) = x_offset + A*sin(freq*time);
-      ref_states_matrix_(1, i) = y_offset + A*sin(2*freq*time);
-      ref_states_matrix_(2, i) = freq*A*cos(freq*time);
-      ref_states_matrix_(3, i) = 2*freq*A*cos(2*freq*time);
-      ref_states_matrix_(4, i) = -freq*freq*A*sin(freq*time);
-      ref_states_matrix_(5, i) = -4*freq*freq*A*sin(2*freq*time);
+    ref_states_matrix = MatrixXd(6, m);
+    for (int i = 0; i < m; ++i) {
+      time = i*t_sampling;
+      ref_states_matrix(0, i) = x_offset + A*sin(freq*time);
+      ref_states_matrix(1, i) = y_offset + A*sin(2*freq*time);
+      ref_states_matrix(2, i) = freq*A*cos(freq*time);
+      ref_states_matrix(3, i) = 2*freq*A*cos(2*freq*time);
+      ref_states_matrix(4, i) = -freq*freq*A*sin(freq*time);
+      ref_states_matrix(5, i) = -4*freq*freq*A*sin(2*freq*time);
     }
   }
 

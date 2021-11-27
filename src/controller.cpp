@@ -41,17 +41,23 @@ Controller::Controller(std::string action_name,
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
+  ROS_WARN("DEBUG 1");
   // Set goal reached false
   goal_reached_ = false;
 
-  // Set goal position
-  goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
-  goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
+
+
+  ROS_WARN("DEBUG 2");
 
   // Make trajectory
   if (goal->const_trajectory) {
+    ROS_WARN("DEBUG 3");
     traj_gen_.makeConstantTrajectory(goal->average_velocity, goal->sampling_time, ref_states_matrix_);
   } else {
+    // Set goal position
+    goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
+    goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
+  
     traj_gen_.makeTrajectory(goal->path, goal->average_velocity, goal->sampling_time, ref_states_matrix_);
   }
 
@@ -113,17 +119,19 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   }
 
   // TODO(Rafael) check this if???
-  if (goal_distance_) {
+   if (goal_distance_) {
+  //if (true) {
     result_.distance_traveled_percentage = feedback_.distance_traveled_percentage;
+    // result_.distance_traveled_percentage = 100;
     result_.mission_status = "SUCCEED";
     ROS_INFO("%s: Succeeded", action_name_.c_str());
     action_server_.setSucceeded(result_);
   }
 
   // Stop the robot
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.angular.z = 0.0;
-  // cmd_vel_pub_.publish(cmd_vel);
+  // cmd_vel.linear.x = 0.0;
+  // cmd_vel.angular.z = 0.0;
+  cmd_vel_pub_.publish(cmd_vel);
 }
 
 bool Controller::isGoalReached() {
@@ -208,6 +216,8 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   cmd_vel.linear.x = vel;
   cmd_vel.angular.z = omega;
 
+  // cmd_vel.linear.x = 0.0;
+  // cmd_vel.angular.z = 0.0;
   return true;
 }
 

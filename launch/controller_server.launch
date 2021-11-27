@@ -11,9 +11,9 @@
     </node>
 
     <!-- Reference State Service-->
-    <!-- <node pkg="trajectory_tracking_control" type="reference_states_srv_server" name="reference_states_server"  output="screen">
-    </node> -->
+    <node pkg="trajectory_tracking_control" type="reference_states_srv_server" name="reference_states_server"  output="screen">
+    </node>
 
     <!-- Visualization Tools -->
-    <!-- <include file="$(find visualization_tools)/launch/visual_tools.launch" /> -->
+    <include file="$(find visualization_tools)/launch/visual_tools.launch" />
 </launch>

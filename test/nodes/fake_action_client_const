@@ -7,8 +7,9 @@ import actionlib
 
 from trajectory_tracking_control.msg import ExecuteTrajectoryTrackingAction, ExecuteTrajectoryTrackingGoal
 
-class FakeActionClient():
+class FakeActionClientConst():
     def __init__(self, path, sampling_time, average_velocity):
+        rospy.logwarn('DEBUG 1')
         self.path = path
         self.t_s = sampling_time
         self.vel_avg = average_velocity
@@ -17,12 +18,16 @@ class FakeActionClient():
 
         client.wait_for_server()
 
+        rospy.logwarn('DEBUG 2')
+
         goal = ExecuteTrajectoryTrackingGoal()
         goal.path = PoseArray()
         goal.average_velocity = self.vel_avg
         goal.sampling_time = self.t_s
         goal.const_trajectory = True
         goal.control_method = ExecuteTrajectoryTrackingGoal.LINEAR
+
+        rospy.logwarn('DEBUG 3')
 
         client.send_goal(goal, feedback_cb=self.feedback_cb)
 
@@ -44,7 +49,7 @@ if __name__ == "__main__":
     
     # Action Goal
     path = []
-    vel_avg = 0.5
+    vel_avg = 0.3
     t_s = 0.1
 
-    FakeActionClient(path, t_s, vel_avg)
+    FakeActionClientConst(path, t_s, vel_avg)

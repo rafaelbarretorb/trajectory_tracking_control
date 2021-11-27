@@ -8,7 +8,7 @@ Linear:
   k_yaw: 10.0
   g: 85  # g > 0
   zeta: 0.9
-  vel_max_x: 0.35  # m/s
+  vel_max_x: 0.5  # m/s
   max_rot_vel: 0.75  # rad/s
   xy_goal_tolerance: 0.2
   const_reference_trajectory: true
