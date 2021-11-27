@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+
+import rospy
+from geometry_msgs.msg import Point, Pose, PoseArray
+
+import actionlib
+
+from trajectory_tracking_control.msg import ExecuteTrajectoryTrackingAction, ExecuteTrajectoryTrackingGoal
+
+class FakeActionClient():
+    def __init__(self, path, sampling_time, average_velocity):
+        self.path = path
+        self.t_s = sampling_time
+        self.vel_avg = average_velocity
+
+        client = actionlib.SimpleActionClient('trajectory_tracking_control', ExecuteTrajectoryTrackingAction)
+
+        client.wait_for_server()
+
+        goal = ExecuteTrajectoryTrackingGoal()
+        goal.path = PoseArray()
+        goal.average_velocity = self.vel_avg
+        goal.sampling_time = self.t_s
+        goal.const_trajectory = True
+        goal.control_method = ExecuteTrajectoryTrackingGoal.LINEAR
+
+        client.send_goal(goal, feedback_cb=self.feedback_cb)
+
+        client.wait_for_result()
+
+        result = client.get_result()
+
+        rospy.loginfo('Percentage: ' + str(result.distance_traveled_percentage))
+        rospy.loginfo('Mission Status: ' + str(result.mission_status))
+        rospy.loginfo('Outcome :' + str(result.goal_distance))
+    
+    def feedback_cb(self, msg):
+        rospy.loginfo('Percentage: ' + str(msg.distance_traveled_percentage))
+        rospy.loginfo('Mission Status: ' + str(msg.mission_status))
+
+
+if __name__ == "__main__":
+    rospy.init_node('fake_action_client_const')
+    
+    # Action Goal
+    path = []
+    vel_avg = 0.5
+    t_s = 0.1
+
+    FakeActionClient(path, t_s, vel_avg)
