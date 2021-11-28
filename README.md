@@ -63,7 +63,7 @@ Using B-Spline Interpolation to generate reference trajectories.
 
 #### 1.2 ```reference_states_server```
 
-This node provides an implementation of the ServiceServer that computes the reference states (position, velocity, and acceleration) of a trajectory given a path (set of planar positions), the average velocity desired, and the sampling time. The reference trajectories are generated using **Cubic B-Spline Interpolation**.
+This node provides an implementation of the ServiceServer that computes the reference states (position, velocity, and acceleration) of a trajectory given a path, the average velocity desired, and the sampling time. The reference trajectories are generated using **Cubic B-Spline Interpolation**.
 
 ##### 1.2.1 Expected Behavior
 

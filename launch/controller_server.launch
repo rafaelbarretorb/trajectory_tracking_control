@@ -6,7 +6,7 @@
     </node> -->
 
     <!-- Controller Server -->
-    <node pkg="trajectory_tracking_control" type="trajectory_tracking_control" name="controller"  output="screen">
+    <node pkg="trajectory_tracking_control" type="trajectory_controller" name="controller"  output="screen">
         <rosparam command="load" file="$(find trajectory_tracking_control)/config/controller_parameters.yaml"/>
     </node>
 

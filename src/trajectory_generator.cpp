@@ -9,9 +9,7 @@
 
 namespace trajectory_tracking_control {
 
-void TrajectoryGenerator::makeConstantTrajectory(double vel_avg,  // TODO(RAFael) not using vel_avg
-                            double t_sampling,
-                            MatrixXd &ref_states_matrix) {  // NOLINT
+void TrajectoryGenerator::makeConstantTrajectory(double t_sampling, MatrixXd &ref_states_matrix) {  // NOLINT
   ros::NodeHandle private_nh("~");
   
   double x_offset;
@@ -92,5 +90,7 @@ void TrajectoryGenerator::displayConstantTrajectoryInfo(double x_offset,
   ROS_INFO("Amplitude Y: %2f", y_amp);
   ROS_INFO("Frequency: %2f", freq);
 }
+
+
 
 }  // namespace trajectory_tracking_control

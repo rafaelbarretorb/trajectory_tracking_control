@@ -35,7 +35,6 @@ Controller::Controller(std::string action_name,
   ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
-
   ref_cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_cmd_vel", 100, true);
 
   // Reference States Service
@@ -48,7 +47,7 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
 
   // Make trajectory
   if (goal->const_trajectory) {
-    traj_gen_.makeConstantTrajectory(goal->average_velocity, goal->sampling_time, ref_states_matrix_);
+    traj_gen_.makeConstantTrajectory(goal->sampling_time, ref_states_matrix_);
   } else {
     // Set goal position
     goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;

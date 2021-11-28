@@ -21,9 +21,7 @@ class TrajectoryGenerator {
  public:
   TrajectoryGenerator() = default;
 
-  void makeConstantTrajectory(double vel_avg,  // TODO(RAFael) not using vel_avg
-                              double t_sampling,
-                              MatrixXd &ref_states_matrix);
+  void makeConstantTrajectory(double t_sampling, MatrixXd &ref_states_matrix);
 
   void makeTrajectory(const geometry_msgs::PoseArray &path,
                       double vel_avg,
