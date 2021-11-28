@@ -7,7 +7,7 @@ on:
     paths-ignore:
       - '**.md'
 jobs:
-  industrial_ci:
+  build-test:
     strategy:
       matrix:
         env:
@@ -16,5 +16,5 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ros-tooling/setup-ros@v0.2
-      # - uses: 'ros-industrial/industrial_ci@master'
+      - uses: ros-tooling/action-ros-ci@v0.2
         env: ${{matrix.env}}
