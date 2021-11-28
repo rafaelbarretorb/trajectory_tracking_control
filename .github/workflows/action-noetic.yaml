@@ -30,6 +30,6 @@ jobs:
       - name: build and test
         uses: ros-tooling/action-ros-ci@v0.2
         with:
-          package-name: forward_looking_sonar_gazebo
+          package-name: trajectory_tracking_control
           target-ros1-distro: ${{ matrix.ros_distro }}
           vcs-repo-file-url: "/tmp/deps.repos"  # ensure updated dep.repos from source branch
