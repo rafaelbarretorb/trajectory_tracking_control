@@ -1,5 +1,4 @@
 name: ros-action-ci
-
 on:
   pull_request:
     paths-ignore:
