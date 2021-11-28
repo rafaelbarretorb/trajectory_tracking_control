@@ -1,8 +1,9 @@
 name: ros-action-ci
-on: [pull_request, workflow_dispatch]
-  paths-ignore:
-    - '**.md'
-
+on:
+  workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - '**.md'
 jobs:
   build-test:
     runs-on: ubuntu-latest
