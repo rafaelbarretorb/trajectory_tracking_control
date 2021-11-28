@@ -1,6 +1,12 @@
 ## ```trajectory_tracking_control```
 
-![](docs/husky_controller.gif)
+[![ros-action-ci](https://github.com/rafaelbarretorb/trajectory_tracking_control/actions/workflows/action-ros-ci.yaml/badge.svg)](https://github.com/rafaelbarretorb/trajectory_tracking_control/actions/workflows/action-ros-ci.yaml) [![ros-action-ci](https://github.com/rafaelbarretorb/trajectory_tracking_control/actions/workflows/action-ros-ci.yaml/badge.svg)](https://github.com/rafaelbarretorb/trajectory_tracking_control/actions/workflows/action-ros-ci.yaml)
+
+### Constant Trajectory
+![](docs/const_traj.gif)
+
+### From a given path
+![](docs/no_const_traj.gif)
 
 ROS Trajectory Tracking Control package for differential drive and skid-steer drive mobile robots.
 
@@ -12,7 +18,7 @@ Using B-Spline Interpolation to generate reference trajectories.
   - "Wheeled Mobile Robotics: From Fundamentals Towards Autonomous Systems".
 
 - Articles:
-  - s
+  - a
 ### Project plan
 #### Design types developped:
 
