@@ -12,6 +12,7 @@ Controller::Controller(std::string action_name,
                        tf2_ros::Buffer& tf_buffer) : action_name_(action_name),
                                                      nh_(*nodehandle),
                                                      pose_handler_(&tf_buffer),
+                                                     traj_gen_(&nh_),
                                                      action_server_(nh_,
                                                                     action_name_,
                                                                     boost::bind(&Controller::executeCB, this, _1),
@@ -36,9 +37,6 @@ Controller::Controller(std::string action_name,
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
   ref_cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_cmd_vel", 100, true);
-
-  // Reference States Service
-  ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -54,9 +52,10 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
 
     traj_gen_.makeTrajectory(goal->path, goal->average_velocity, goal->sampling_time, ref_states_matrix_);
+    goal_distance_ = traj_gen_.getGoalDistance();
   }
 
-  // Publish Reference path TODO(Rafael) here?
+  // Publish reference path
   pose_handler_.publishReferencePath(ref_states_matrix_, ref_path_pub_);
 
   geometry_msgs::Twist cmd_vel;

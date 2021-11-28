@@ -2,12 +2,17 @@
   Copyright 2021 - Rafael Barreto
 */
 
-#include <ros/ros.h>
+
 
 #include "trajectory_tracking_control/trajectory_generator.hpp"
 
 
 namespace trajectory_tracking_control {
+
+TrajectoryGenerator::TrajectoryGenerator(ros::NodeHandle *nodehandle) : nh_(*nodehandle) {
+  // Reference States Service
+  ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
+}
 
 void TrajectoryGenerator::makeConstantTrajectory(double t_sampling, MatrixXd &ref_states_matrix) {  // NOLINT
   ros::NodeHandle private_nh("~");
@@ -63,9 +68,11 @@ void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
     goal_distance_ = srv.response.goal_distance;
 
   } else {
-    ROS_ERROR("Failed to call service Coverage Path Planning");
+    ROS_ERROR("Failed to call Reference States Service");
   }
 
+  ROS_WARN("DEBUG: matrix_rows_size: %d", matrix_rows_size);
+  ROS_WARN("DEBUG: matrix_columns_size: %d", matrix_columns_size);
   // Initialize the matrix
   ref_states_matrix = MatrixXd(matrix_rows_size, matrix_columns_size);
 
@@ -89,6 +96,10 @@ void TrajectoryGenerator::displayConstantTrajectoryInfo(double x_offset,
   ROS_INFO("Amplitude X: %2f", x_amp);
   ROS_INFO("Amplitude Y: %2f", y_amp);
   ROS_INFO("Frequency: %2f", freq);
+}
+
+double TrajectoryGenerator::getGoalDistance() const {
+  return goal_distance_;
 }
 
 

@@ -2,8 +2,6 @@
   Copyright 2021 - Rafael Barreto
 */
 
-#include <ros/ros.h>
-
 #include <tf2_ros/transform_listener.h>
 
 #include "trajectory_tracking_control/controller.hpp"

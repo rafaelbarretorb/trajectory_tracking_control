@@ -29,9 +29,6 @@
 #include <actionlib/server/simple_action_server.h>
 #include <trajectory_tracking_control/ExecuteTrajectoryTrackingAction.h>
 
-// Service
-#include <trajectory_tracking_control/ComputeReferenceStates.h>
-
 #include <vector>
 #include <string>
 #include <cmath>
@@ -124,8 +121,6 @@ class Controller {
   // Yaw angle
   double yaw_ref_, yaw_curr_;
 
-  ros::ServiceClient ref_states_srv_;
-
   ros::Subscriber pose_sub_;
 
   geometry_msgs::Point goal_position_;
@@ -153,6 +148,7 @@ class Controller {
   TrajectoryGenerator traj_gen_;
 
   geometry_msgs::Twist ref_cmd_vel_;
+
 };
 }  // namespace trajectory_tracking_control
 

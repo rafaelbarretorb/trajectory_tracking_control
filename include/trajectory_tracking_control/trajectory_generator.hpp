@@ -5,7 +5,7 @@
 #ifndef TRAJECTORY_TRACKING_CONTROL_TRAJECTORY_GENERATOR_HPP_  // NOLINT
 #define TRAJECTORY_TRACKING_CONTROL_TRAJECTORY_GENERATOR_HPP_
 
-
+#include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
 
 #include <eigen3/Eigen/Core>   // MatrixXd
@@ -19,7 +19,7 @@ namespace trajectory_tracking_control {
 
 class TrajectoryGenerator {
  public:
-  TrajectoryGenerator() = default;
+  TrajectoryGenerator(ros::NodeHandle *nodehandle);
 
   void makeConstantTrajectory(double t_sampling, MatrixXd &ref_states_matrix);
 
@@ -27,12 +27,14 @@ class TrajectoryGenerator {
                       double vel_avg,
                       double t_sampling,
                       MatrixXd &ref_states_matrix);
+
+  double getGoalDistance() const;
   
  private:
   void displayConstantTrajectoryInfo(double x_offset, double y_offset, double x_amp, double y_amp, double freq);
-  bool const_trajectory_{false};
   ros::ServiceClient ref_states_srv_;
-  double goal_distance_;  // TODO(Rafael) DO I need this?
+  double goal_distance_;
+  ros::NodeHandle nh_;
 };
 
 }  // namespace trajectory_tracking_control
