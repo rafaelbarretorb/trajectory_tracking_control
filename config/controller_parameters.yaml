@@ -1,17 +1,25 @@
 controller_type: "Linear"
+const_reference_trajectory: true
+
+# Constant Reference Trajectory
+x_offset: 1.0
+y_offset: 0.0
+x_amplitude: 3.0
+y_amplitude: 3.0
+frequency: 0.02
 
 # Linear Controller
 Linear:
-  const_gains: true
   k_x: 3.0
   k_y: 5.0
   k_yaw: 10.0
   g: 85  # g > 0
   zeta: 0.9
-  vel_max_x: 0.5  # m/s
+  vel_max_x: 0.8  # m/s
   max_rot_vel: 0.75  # rad/s
   xy_goal_tolerance: 0.2
-  const_reference_trajectory: true
+  constant_gains: true
+  
 
 # Lyapunov-Based Control
 Lyapunov:
