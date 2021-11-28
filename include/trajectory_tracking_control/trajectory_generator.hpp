@@ -29,8 +29,9 @@ class TrajectoryGenerator {
                       double vel_avg,
                       double t_sampling,
                       MatrixXd &ref_states_matrix);
-
+  
  private:
+  void displayConstantTrajectoryInfo(double x_offset, double y_offset, double x_amp, double y_amp, double freq);
   bool const_trajectory_{false};
   ros::ServiceClient ref_states_srv_;
   double goal_distance_;  // TODO(Rafael) DO I need this?
