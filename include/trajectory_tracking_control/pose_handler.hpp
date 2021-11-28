@@ -1,4 +1,6 @@
-// Copyright Rafael Barreto
+/*
+  Copyright 2021 - Rafael Barreto
+*/
 
 #ifndef TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_HPP_
 #define TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_HPP_

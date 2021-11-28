@@ -1,11 +1,9 @@
-
-// Copyright Rafael Barreto
+/*
+  Copyright 2021 - Rafael Barreto
+*/
 
 #ifndef TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_
 #define TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_
-
-#include <ros/ros.h>
-
 
 
 // Messages
@@ -48,13 +46,13 @@ using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
 
-using ExecuteTrajectoryTrackingActionServer = 
+using ExecuteTrajectoryTrackingActionServer =
   actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajectoryTrackingAction>;
 
 
 class Controller {
  public:
-  Controller(std::string action_name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf_buffer);
+  Controller(std::string action_name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf_buffer);  // NOLINT
 
   void executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
@@ -65,7 +63,7 @@ class Controller {
   virtual void updateReferenceState(int n);
 
   void loadControllerParams();
-  
+
   void displayControllerInfo();
 
  protected:
@@ -73,12 +71,21 @@ class Controller {
   std::string action_name_;
   ros::NodeHandle nh_;
   ExecuteTrajectoryTrackingActionServer action_server_;
-  std::vector<geometry_msgs::Point> reference_trajectory_;
 
   ExecuteTrajectoryTrackingFeedback feedback_;
   ExecuteTrajectoryTrackingResult result_;
 
-  // Reference Matrix
+  /*
+    Reference States Matrix(6, n)
+
+    | x_0    x_1    ...  x_n   |
+    | y_0    y_1    ...  y_n   |
+    | dx_0   dx_1   ...  dx_n  |
+    | dy_0   dy_1   ...  dy_n  |
+    | ddx_0  ddx_1  ...  ddx_n |
+    | ddy_0  ddy_1  ...  ddy_n |
+
+  */
   MatrixXd ref_states_matrix_;
 
   // Current Pose
@@ -125,8 +132,8 @@ class Controller {
 
   ros::Publisher ref_pose_pub_;
   ros::Publisher ref_path_pub_;
-
   ros::Publisher cmd_vel_pub_;
+  ros::Publisher ref_cmd_vel_pub_;
 
   double goal_distance_;
 
@@ -144,7 +151,9 @@ class Controller {
   std::string controller_type_{std::string("Linear")};
 
   TrajectoryGenerator traj_gen_;
+
+  geometry_msgs::Twist ref_cmd_vel_;
 };
 }  // namespace trajectory_tracking_control
 
-#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_ NOLINT
+#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_

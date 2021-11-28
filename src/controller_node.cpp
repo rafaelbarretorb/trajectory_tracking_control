@@ -1,4 +1,7 @@
-// Copyright 2020
+/*
+  Copyright 2021 - Rafael Barreto
+*/
+
 #include <ros/ros.h>
 
 #include <tf2_ros/transform_listener.h>

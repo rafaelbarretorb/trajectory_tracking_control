@@ -1,3 +1,7 @@
+/*
+  Copyright 2021 - Rafael Barreto
+*/
+
 #include "trajectory_tracking_control/pose_handler.hpp"
 
 

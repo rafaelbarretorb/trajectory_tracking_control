@@ -1,7 +1,7 @@
 /*
   Copyright 2021 - Rafael Barreto
 */
-
+#include <ros/ros.h>
 #include "trajectory_tracking_control/controller.hpp"
 
 namespace trajectory_tracking_control {
@@ -36,28 +36,24 @@ Controller::Controller(std::string action_name,
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
 
+  ref_cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_cmd_vel", 100, true);
+
   // Reference States Service
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 }
 
 void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
-  ROS_WARN("DEBUG 1");
   // Set goal reached false
   goal_reached_ = false;
 
-
-
-  ROS_WARN("DEBUG 2");
-
   // Make trajectory
   if (goal->const_trajectory) {
-    ROS_WARN("DEBUG 3");
     traj_gen_.makeConstantTrajectory(goal->average_velocity, goal->sampling_time, ref_states_matrix_);
   } else {
     // Set goal position
     goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
     goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
-  
+
     traj_gen_.makeTrajectory(goal->path, goal->average_velocity, goal->sampling_time, ref_states_matrix_);
   }
 
@@ -129,8 +125,8 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   }
 
   // Stop the robot
-  // cmd_vel.linear.x = 0.0;
-  // cmd_vel.angular.z = 0.0;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
   cmd_vel_pub_.publish(cmd_vel);
 }
 
@@ -160,6 +156,11 @@ void Controller::updateReferenceState(int n) {
 
   // Publish reference pose
   pose_handler_.publishReferencePose(x_ref_, y_ref_, yaw_ref_, ref_pose_pub_);
+
+  // Publish reference velocity
+  ref_cmd_vel_.linear.x = vel_ref_;
+  ref_cmd_vel_.angular.z = omega_ref_;
+  ref_cmd_vel_pub_.publish(ref_cmd_vel_);
 }
 
 bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
@@ -221,9 +222,10 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   return true;
 }
 
-// TODO Create a new class called LinearController
 void Controller::loadControllerParams() {
   ros::NodeHandle private_nh("~");
+
+  private_nh.getParam("constant_trajectory", constant_trajectory_);
 
   private_nh.getParam(controller_type_ + "/" + "constant_gains", constant_gains_);
   private_nh.getParam(controller_type_ + "/" + "k_x", k_x_);
@@ -233,7 +235,6 @@ void Controller::loadControllerParams() {
   private_nh.getParam(controller_type_ + "/" + "zeta", zeta_);
   private_nh.getParam(controller_type_ + "/" + "vel_max_x", vel_max_);
   private_nh.getParam(controller_type_ + "/" + "max_rot_vel", omega_max_);
-  private_nh.getParam(controller_type_ + "/" + "constant_trajectory", constant_trajectory_);
   private_nh.getParam(controller_type_ + "/" + "xy_goal_tolerance", xy_goal_tolerance_);
 
   if (g_ < 0.0) {
