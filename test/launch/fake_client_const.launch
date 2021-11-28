@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- fake client launch file -->
+    <node pkg="trajectory_tracking_control" type="fake_action_client_const" name="fake_action_client_const"  output="screen">
+    </node>
+</launch>

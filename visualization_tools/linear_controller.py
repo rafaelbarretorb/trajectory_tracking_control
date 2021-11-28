@@ -27,23 +27,23 @@ def main():
     v_max = 0.50
     w_max = PI/6 # PI/6
 
-    enable_noise = False
+    enable_noise = True
     Ts = 0.05  # Sampling time
-    Td = 90  # Simulation duration time
+    Td = 30  # Simulation duration time
     t = np.arange(0, Td+Ts, Ts)
     q = np.array([ [1.1], [0.8], [0]])
 
     # Reference
     w_f = 2*PI/Td  # Angular frequency
 
-    xRef = 1.1 + 2.5*np.sin(w_f*t)
-    yRef = 0.9 + 2.5*np.sin(2*w_f*t) 
+    xRef = 1.1 + 0.7*np.sin(w_f*t)
+    yRef = 0.9 + 0.7*np.sin(2*w_f*t) 
 
-    dxRef = w_f*2.5*np.cos(w_f*t)
-    dyRef = 2*w_f*2.5*np.cos(2*w_f*t)
+    dxRef = w_f*0.7*np.cos(w_f*t)
+    dyRef = 2*w_f*0.7*np.cos(2*w_f*t)
 
-    ddxRef = -(w_f**2)*2*2.5*np.sin(w_f*t)
-    ddyRef = -4*(w_f**2)*2.5*np.sin(2*w_f*t)
+    ddxRef = -(w_f**2)*2*0.7*np.sin(w_f*t)
+    ddyRef = -4*(w_f**2)*0.7*np.sin(2*w_f*t)
 
     qRef = np.stack((xRef, yRef, np.arctan2(dyRef, dxRef)), axis=0)  # Reference trajectory
 
@@ -97,14 +97,14 @@ def main():
 
         # Feedforward and feedback
         v = vRef_curr*np.cos(ePhi) + Kx*eX
-        acc_lin = (v - v_old)/Ts
+        #acc_lin = (v - v_old)/Ts
 
-        if abs(acc_lin) > acc_lin_max:
-            acc_lin = np.sign(acc_lin)*acc_lin_max
+        # if abs(acc_lin) > acc_lin_max:
+        #     acc_lin = np.sign(acc_lin)*acc_lin_max
         
-        v = v_old + acc_lin*Ts
-        if v > v_max:
-            v = v_max
+        # v = v_old + acc_lin*Ts
+        # if v > v_max:
+        #     v = v_max
 
         w = wRef_curr + Ky*eY + Kphi*ePhi
         # w_tmp = w
@@ -124,9 +124,9 @@ def main():
         # Noise
         x_noise = 0.75
         y_noise = 0.75
-        phi_noise = 0.35
+        phi_noise = 0.75
         noise = noise_old + np.array([ [x_noise], [y_noise], [1.0]]) * np.array([ [rand()], [rand()], [1.0]])
-        noise[2][0] = phi_noise*rand() # phi noise is not accumulative and average value 0
+        noise[2][0] = phi_noise*rand() # phi noise is not accumulative and average value 0 (does not work accumulatives)
 
         if enable_noise:
             q = q + Ts*dq*(np.ones([3,1]) + noise)
@@ -134,7 +134,7 @@ def main():
             q = q + Ts*dq
 
         q[2][0] = wrapToPi(q[2][0])
-        # noise_old = noise
+        #noise_old = noise
 
         # Data Log
         q_log.append([q[0][0], [q[1][0]]])
@@ -166,40 +166,44 @@ def main():
     # Figure 1
     plt.figure(1, figsize=(8, 8))
 
-    plt.plot(xRef, yRef, 'r--')
-    plt.plot( *zip(*q_log) )
-    plt.xlim([-4.0, 4.0])
-    plt.ylim([-4.0, 4.0])
+    ref,  = plt.plot(xRef, yRef, 'r--', label='reference trajectory')
+    robot, = plt.plot( *zip(*q_log), label='robot position')
+    plt.xlim([0.0, 2.0])
+    plt.ylim([0.0, 2.0])
     plt.xlabel('x (m)')
     plt.ylabel('y (m)')
-
+    plt.legend([ref, robot], ['reference trajectory', 'robot position'])
+    
     # Figure 2
-    fig2, (ax1, ax2) = plt.subplots(2, figsize=(16, 8))
+
+    fig2, (ax1, ax2) = plt.subplots(2, figsize=(8, 8))
     
     plt.subplot(2, 1, 1)
-    plt.plot(t, v_log)
-    plt.plot(t, vRef, 'r--')
+    v, = plt.plot(t, v_log)
+    ref_v, = plt.plot(t, vRef, 'r--')
     plt.xlabel('t (s)')
     plt.ylabel('v (m/s)')
+    plt.legend([ref_v, v], ['reference linear velocity', 'robot linear velocity'])
 
     plt.subplot(2, 1, 2)
-    plt.plot(t, w_log)
-    plt.plot(t, wRef, 'r--')
+    w, = plt.plot(t, w_log)
+    ref_w, = plt.plot(t, wRef, 'r--')
     plt.xlabel('t (s)')
     plt.ylabel('$\mathbf{\omega}$ (m/s)')
+    plt.legend([ref_w, w], ['reference angular velocity', 'robot angular velocity'])
 
     # Figure 2
-    fig3, (ax1, ax2) = plt.subplots(2, figsize=(16, 8))
+    # fig3, (ax1, ax2) = plt.subplots(2, figsize=(16, 8))
     
-    plt.subplot(2, 1, 1)
-    plt.plot(t, Kx_log)
-    plt.xlabel('t (s)')
-    plt.ylabel('Kx')
+    # plt.subplot(2, 1, 1)
+    # plt.plot(t, Kx_log)
+    # plt.xlabel('t (s)')
+    # plt.ylabel('Kx')
 
-    plt.subplot(2, 1, 2)
-    plt.plot(t, Ky_log)
-    plt.xlabel('t (s)')
-    plt.ylabel('Ky')
+    # plt.subplot(2, 1, 2)
+    # plt.plot(t, Ky_log)
+    # plt.xlabel('t (s)')
+    # plt.ylabel('Ky')
     # plt.figure(3, figsize=(10,10))
 
     # plt.plot(xRef, yRef, 'r--')

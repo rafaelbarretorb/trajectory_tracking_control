@@ -1,9 +1,16 @@
-#include <trajectory_tracking_control/pose_handler.h>
+/*
+  Copyright 2021 - Rafael Barreto
+*/
+
+#include "trajectory_tracking_control/pose_handler.hpp"
 
 
 namespace trajectory_tracking_control {
-PoseHandler::PoseHandler(tf2_ros::Buffer* tf) : tf_(tf), tfl_(*tf_) {
 
+// TODO(Rafael) tfl_??
+
+PoseHandler::PoseHandler(tf2_ros::Buffer* tf) : tf_(tf), tfl_(*tf_) {
+  // TODO(Rafael) remove
   odom_frame_ = "odom";
   global_frame_ = "map";
   robot_base_frame_ = "base_link";
@@ -43,6 +50,8 @@ void PoseHandler::publishReferencePose(double x, double y, double yaw,
   pose.pose.position.y = y;
   pose.pose.position.z = 0.0;
 
+  // TODO(Rafael) make a function
+
   tf2::Quaternion quat_tf;
   geometry_msgs::Quaternion quat_msg;
 
@@ -55,7 +64,7 @@ void PoseHandler::publishReferencePose(double x, double y, double yaw,
   pub.publish(pose);
 }
 
-void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix,const ros::Publisher &pub) {
+void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix, const ros::Publisher &pub) {
   geometry_msgs::PoseArray path;
 
   for (int i = 0; i < ref_states_matrix.cols(); ++i) {
@@ -64,11 +73,8 @@ void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix,const r
     pose.position.y = ref_states_matrix(1, i);
     path.poses.push_back(pose);
   }
-  pub.publish(path);
-}
 
-double PoseHandler::euclideanDistance(double x1, double y1, double x2, double y2) {
-  return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+  pub.publish(path);
 }
 
 }  // namespace trajectory_tracking_control

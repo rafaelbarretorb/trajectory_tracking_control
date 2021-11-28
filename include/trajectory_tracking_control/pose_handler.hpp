@@ -1,7 +1,9 @@
-// Copyright Rafael Barreto
+/*
+  Copyright 2021 - Rafael Barreto
+*/
 
-#ifndef TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_H_ // NOLINT
-#define TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_H_
+#ifndef TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_HPP_
+#define TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_HPP_
 
 #include <ros/ros.h>
 
@@ -18,46 +20,45 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
 
+// Eigen
+#include <eigen3/Eigen/Core>
+
 #include <vector>
 #include <string>
 #include <cmath>
 
-// Eigen
-#include <eigen3/Eigen/Core>
 
 using Eigen::MatrixXd;
 
 
 namespace trajectory_tracking_control {
 
+inline float euclideanDistance2D(float x1, float y1, float x2, float y2) { return std::hypot((x1 - x2), (y1 - y2)); }
 
 class PoseHandler {
  public:
-  PoseHandler(tf2_ros::Buffer* tf);
+  explicit PoseHandler(tf2_ros::Buffer* tf);
 
   const geometry_msgs::Pose &getRobotPose();
 
   double getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg);
 
-  double euclideanDistance(double x1, double y1, double x2, double y2);
-
   void publishReferencePose(double x, double y, double yaw, const ros::Publisher &pub);
 
-  void publishReferencePath(const MatrixXd &ref_states_matrix,const ros::Publisher &pub);
+  void publishReferencePath(const MatrixXd &ref_states_matrix, const ros::Publisher &pub);
 
  protected:
-
   std::string odom_frame_;
   std::string global_frame_;
   std::string robot_base_frame_;
 
-	// TF2
-	tf2_ros::Buffer* tf_;
-	tf2_ros::TransformListener tfl_;
+  // TF2
+  tf2_ros::Buffer* tf_;
+  tf2_ros::TransformListener tfl_;
 
-	geometry_msgs::Pose robot_pose_;
+  geometry_msgs::Pose robot_pose_;
 
 };
-};  // namespace trajectory_tracking_control
+}  // namespace trajectory_tracking_control
 
-#endif  // TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_H_ NOLINT
+#endif  // TRAJECTORY_TRACKING_CONTROL_POSE_HANDLER_HPP_ NOLINT
