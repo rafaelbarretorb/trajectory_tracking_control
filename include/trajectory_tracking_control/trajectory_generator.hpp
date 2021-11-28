@@ -19,17 +19,17 @@ namespace trajectory_tracking_control {
 
 class TrajectoryGenerator {
  public:
-  TrajectoryGenerator(ros::NodeHandle *nodehandle);
+  explicit TrajectoryGenerator(ros::NodeHandle *nodehandle);
 
-  void makeConstantTrajectory(double t_sampling, MatrixXd &ref_states_matrix);
+  void makeConstantTrajectory(double t_sampling, MatrixXd &ref_states_matrix);  // NOLINT
 
   void makeTrajectory(const geometry_msgs::PoseArray &path,
                       double vel_avg,
                       double t_sampling,
-                      MatrixXd &ref_states_matrix);
+                      MatrixXd &ref_states_matrix);  // NOLINT
 
   double getGoalDistance() const;
-  
+
  private:
   void displayConstantTrajectoryInfo(double x_offset, double y_offset, double x_amp, double y_amp, double freq);
   ros::ServiceClient ref_states_srv_;

@@ -20,12 +20,13 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
 
+// Eigen
+#include <eigen3/Eigen/Core>
+
 #include <vector>
 #include <string>
 #include <cmath>
 
-// Eigen
-#include <eigen3/Eigen/Core>
 
 using Eigen::MatrixXd;
 
@@ -36,7 +37,7 @@ inline float euclideanDistance2D(float x1, float y1, float x2, float y2) { retur
 
 class PoseHandler {
  public:
-  PoseHandler(tf2_ros::Buffer* tf);
+  explicit PoseHandler(tf2_ros::Buffer* tf);
 
   const geometry_msgs::Pose &getRobotPose();
 
@@ -44,19 +45,18 @@ class PoseHandler {
 
   void publishReferencePose(double x, double y, double yaw, const ros::Publisher &pub);
 
-  void publishReferencePath(const MatrixXd &ref_states_matrix,const ros::Publisher &pub);
+  void publishReferencePath(const MatrixXd &ref_states_matrix, const ros::Publisher &pub);
 
  protected:
-
   std::string odom_frame_;
   std::string global_frame_;
   std::string robot_base_frame_;
 
-	// TF2
-	tf2_ros::Buffer* tf_;
-	tf2_ros::TransformListener tfl_;
+  // TF2
+  tf2_ros::Buffer* tf_;
+  tf2_ros::TransformListener tfl_;
 
-	geometry_msgs::Pose robot_pose_;
+  geometry_msgs::Pose robot_pose_;
 
 };
 }  // namespace trajectory_tracking_control

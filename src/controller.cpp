@@ -112,11 +112,8 @@ void Controller::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
     rate.sleep();
   }
 
-  // TODO(Rafael) check this if???
-   if (goal_distance_) {
-  //if (true) {
+  if (goal_distance_) {
     result_.distance_traveled_percentage = feedback_.distance_traveled_percentage;
-    // result_.distance_traveled_percentage = 100;
     result_.mission_status = "SUCCEED";
     ROS_INFO("%s: Succeeded", action_name_.c_str());
     action_server_.setSucceeded(result_);
@@ -215,8 +212,6 @@ bool Controller::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   cmd_vel.linear.x = vel;
   cmd_vel.angular.z = omega;
 
-  // cmd_vel.linear.x = 0.0;
-  // cmd_vel.angular.z = 0.0;
   return true;
 }
 

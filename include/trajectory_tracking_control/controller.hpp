@@ -22,7 +22,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 // Eigen
-// #include <Eigen/Core>
 #include <eigen3/Eigen/Core>
 
 // Action
