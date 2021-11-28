@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.1.3)
 project(trajectory_tracking_control)
 
-# TODO check install action messages to avoid repeat catkin_make
-
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(catkin REQUIRED
@@ -72,7 +70,10 @@ add_library(
   src/trajectory_generator.cpp
 )
 
-add_dependencies(trajectory_controller_lib ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(
+  trajectory_controller_lib
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+)
 
 add_executable(
   trajectory_controller
