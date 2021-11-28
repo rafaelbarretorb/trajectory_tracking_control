@@ -1,20 +1,35 @@
-# Based on https://github.com/ros-industrial/industrial_ci
+name: ros-action-ci
+on: [pull_request, workflow_dispatch]
 
-name: CI-Noetic
-
-on:
-  pull_request:
-    paths-ignore:
-      - '**.md'
 jobs:
   build-test:
-    strategy:
-      matrix:
-        env:
-          - {ROS_DISTRO: noetic, ROS_REPO: main}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - docker_image: ubuntu:bionic
+            ros_distro: melodic
+          - docker_image: ubuntu:focal
+            ros_distro: noetic
+    container:
+      image: ${{ matrix.docker_image }}
+    env:
+        DISPLAY: :99
     steps:
-      - uses: actions/checkout@v2
-      - uses: ros-tooling/setup-ros@v0.2
-      - uses: ros-tooling/action-ros-ci@v0.2
-        env: ${{matrix.env}}
+      - name: Get the code
+        uses: actions/checkout@v2
+      - run: cp deps.repos /tmp  # copy dep.repos to /tmp to be used later
+      - name: setup ROS environment
+        uses: ros-tooling/setup-ros@v0.2
+        with:
+          required-ros-distributions: ${{ matrix.ros_distro }}
+      - name: Setup headless xserver with xvfb
+        run: apt-get update -y && apt-get install --no-install-recommends -y xvfb mesa-utils && rm -rf /var/lib/apt/lists/*
+      - run: Xvfb :99 -screen 0 1024x768x24 +extension GLX +render -noreset >>xsession.log 2>&1 &
+      - name: build and test
+        uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          package-name: forward_looking_sonar_gazebo
+          target-ros1-distro: ${{ matrix.ros_distro }}
+          vcs-repo-file-url: "/tmp/deps.repos"  # ensure updated dep.repos from source branch
