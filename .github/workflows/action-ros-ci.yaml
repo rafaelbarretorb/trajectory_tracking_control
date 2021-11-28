@@ -1,8 +1,10 @@
 name: ros-action-ci
+
 on:
   pull_request:
     paths-ignore:
-      - '**.md'
+      - 'docs/**'
+      - 'README.md'
 jobs:
   build-test:
     runs-on: ubuntu-latest
