@@ -1,9 +1,9 @@
 ### GOAL DEFINITION
 
-string control_method
-string LINEAR = 1 
-string LYAPUNOV = 2
-string MPC = 3
+int32 control_method
+int32 LINEAR = 1 
+int32 LYAPUNOV = 2
+int32 MPC = 3
 
 # if trajectory is constant or not
 bool const_trajectory
