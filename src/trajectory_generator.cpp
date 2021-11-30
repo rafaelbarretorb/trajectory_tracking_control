@@ -3,20 +3,22 @@
 */
 
 
-
 #include "trajectory_tracking_control/trajectory_generator.hpp"
 
 
 namespace trajectory_tracking_control {
 
-TrajectoryGenerator::TrajectoryGenerator(ros::NodeHandle *nodehandle) : nh_(*nodehandle) {
+TrajectoryGenerator::TrajectoryGenerator(ros::NodeHandle *nodehandle,
+                                         double sampling_time) :
+                                         nh_(*nodehandle),
+                                         sampling_time_(sampling_time) {
   // Reference States Service
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 }
 
-void TrajectoryGenerator::makeConstantTrajectory(double t_sampling, MatrixXd &ref_states_matrix) {  // NOLINT
+void TrajectoryGenerator::makeConstantTrajectory() {
   ros::NodeHandle private_nh("~");
-  
+
   double x_offset;
   double y_offset;
   double x_amplitude;
@@ -32,30 +34,29 @@ void TrajectoryGenerator::makeConstantTrajectory(double t_sampling, MatrixXd &re
   displayConstantTrajectoryInfo(x_offset, y_offset, x_amplitude, y_amplitude, freq);
 
   double omega = 2*M_PI*freq;
-  int m = 1/(freq*t_sampling);
+  int m = 1/(freq*sampling_time_);
   double time;
 
-  ref_states_matrix = MatrixXd(6, m);
+  ref_states_matrix_ = MatrixXd(6, m);
   for (int i = 0; i < m; ++i) {
-    time = i*t_sampling;
-    ref_states_matrix(0, i) = x_offset + x_amplitude*sin(omega*time);
-    ref_states_matrix(1, i) = y_offset + y_amplitude*sin(2*omega*time);
-    ref_states_matrix(2, i) = omega*x_amplitude*cos(omega*time);
-    ref_states_matrix(3, i) = 2*omega*y_amplitude*cos(2*omega*time);
-    ref_states_matrix(4, i) = -omega*omega*x_amplitude*sin(omega*time);
-    ref_states_matrix(5, i) = -4*omega*omega*y_amplitude*sin(2*omega*time);
+    time = i * sampling_time_;
+
+    ref_states_matrix_(0, i) = x_offset + x_amplitude*sin(omega*time);
+    ref_states_matrix_(1, i) = y_offset + y_amplitude*sin(2*omega*time);
+    ref_states_matrix_(2, i) = omega*x_amplitude*cos(omega*time);
+    ref_states_matrix_(3, i) = 2*omega*y_amplitude*cos(2*omega*time);
+    ref_states_matrix_(4, i) = -omega*omega*x_amplitude*sin(omega*time);
+    ref_states_matrix_(5, i) = -4*omega*omega*y_amplitude*sin(2*omega*time);
   }
 }
 
 void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
-                    double vel_avg,
-                    double t_sampling,
-                    MatrixXd &ref_states_matrix) {  // NOLINT
+                    double vel_avg) {
   // Request Service
   trajectory_tracking_control::ComputeReferenceStates srv;
   srv.request.path = path;
   srv.request.average_velocity = vel_avg;
-  srv.request.sampling_time = t_sampling;
+  srv.request.sampling_time = sampling_time_;
 
   std_msgs::Float32MultiArray ref_states_arr;
   int matrix_rows_size, matrix_columns_size;
@@ -74,13 +75,13 @@ void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
   ROS_WARN("DEBUG: matrix_rows_size: %d", matrix_rows_size);
   ROS_WARN("DEBUG: matrix_columns_size: %d", matrix_columns_size);
   // Initialize the matrix
-  ref_states_matrix = MatrixXd(matrix_rows_size, matrix_columns_size);
+  ref_states_matrix_ = MatrixXd(matrix_rows_size, matrix_columns_size);
 
   int index;
   for (int row = 0; row < matrix_rows_size; ++row) {
     for (int col = 0; col < matrix_columns_size; ++col) {
       index = row*matrix_columns_size + col;
-      ref_states_matrix(row, col) = ref_states_arr.data[index];
+      ref_states_matrix_(row, col) = ref_states_arr.data[index];
     }
   }
 }
@@ -100,6 +101,37 @@ void TrajectoryGenerator::displayConstantTrajectoryInfo(double x_offset,
 
 double TrajectoryGenerator::getGoalDistance() const {
   return goal_distance_;
+}
+
+void TrajectoryGenerator::updateReferenceState(double time) {
+  int n = round(time/(sampling_time_));
+  if (n > ref_states_matrix_.cols() - 1) {
+    n = ref_states_matrix_.cols() - 1;
+  }
+
+  x_ref_ = ref_states_matrix_(0, n);
+  y_ref_ = ref_states_matrix_(1, n);
+  dx_ref_ = ref_states_matrix_(2, n);
+  dy_ref_ = ref_states_matrix_(3, n);
+  ddx_ref_ = ref_states_matrix_(4, n);
+  ddy_ref_ = ref_states_matrix_(5, n);
+
+  yaw_ref_ = atan2(dy_ref_, dx_ref_);
+
+  // Reference Pose State
+  q_ref_ << x_ref_, y_ref_, yaw_ref_;
+
+  // Reference Velocities
+  vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+  omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+
+  // Publish reference pose
+  pose_handler_.publishReferencePose(x_ref_, y_ref_, yaw_ref_, ref_pose_pub_);
+
+  // Publish reference velocity
+  ref_cmd_vel_.linear.x = vel_ref_;
+  ref_cmd_vel_.angular.z = omega_ref_;
+  ref_cmd_vel_pub_.publish(ref_cmd_vel_);
 }
 
 

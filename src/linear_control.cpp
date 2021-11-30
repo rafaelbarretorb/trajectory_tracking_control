@@ -6,8 +6,18 @@
 
 namespace trajectory_tracking_control {
 
-LinearControl::LinearControl(tf2_ros::Buffer& tf_buffer,
-                             const MatrixXd &ref_states_matrix) : pose_handler_(&tf_buffer){}  
+LinearControl::LinearControl(TrajectoryGenerator *trajectory_generator,
+                             PoseHandler *pose_handler) : pose_handler_(*pose_handler),
+                                                           traj_gen_(*trajectory_generator), {
+  // Initialize matrices
+  q_ref_ = MatrixXd(3, 1);
+  q_curr_ = MatrixXd(3, 1);
+  tf_to_global_ = MatrixXd(3, 3);
+  error_ = MatrixXd(3, 1);
+
+    // Publish reference path
+  pose_handler_.publishReferencePath(ref_states_matrix_, ref_path_pub_);
+}
 
 bool LinearControl::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
   double omega;
@@ -24,7 +34,7 @@ bool LinearControl::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
                    -sin(yaw_curr_), cos(yaw_curr_), 0.0,
                    0.0, 0.0, 1.0;
 
-  // Posture Error
+  // Pose Error
   error_ = tf_to_global_ * (q_ref_ - q_curr_);
 
   // Wrap to PI yaw error
@@ -65,4 +75,58 @@ bool LinearControl::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
   return true;
 }
-}  
+
+void LinearControl::updateReferenceState(int n) {
+  x_ref_ = ref_states_matrix_(0, n);
+  y_ref_ = ref_states_matrix_(1, n);
+  dx_ref_ = ref_states_matrix_(2, n);
+  dy_ref_ = ref_states_matrix_(3, n);
+  ddx_ref_ = ref_states_matrix_(4, n);
+  ddy_ref_ = ref_states_matrix_(5, n);
+
+  yaw_ref_ = atan2(dy_ref_, dx_ref_);
+
+  // Reference Pose State
+  q_ref_ << x_ref_, y_ref_, yaw_ref_;
+
+  // Reference Velocities
+  vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+  omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
+
+  // Publish reference pose
+  pose_handler_.publishReferencePose(x_ref_, y_ref_, yaw_ref_, ref_pose_pub_);
+
+  // Publish reference velocity
+  ref_cmd_vel_.linear.x = vel_ref_;
+  ref_cmd_vel_.angular.z = omega_ref_;
+  ref_cmd_vel_pub_.publish(ref_cmd_vel_);
+}
+
+void LinearControl::loadControllerParams() {
+  ros::NodeHandle private_nh("~");
+
+  std::string controller_type = "Linear";
+  private_nh.getParam(controller_type + "/" + "constant_gains", constant_gains_);
+  private_nh.getParam(controller_type + "/" + "k_x", k_x_);
+  private_nh.getParam(controller_type + "/" + "k_y", k_y_);
+  private_nh.getParam(controller_type + "/" + "k_yaw", k_yaw_);
+  private_nh.getParam(controller_type + "/" + "g", g_);
+  private_nh.getParam(controller_type + "/" + "zeta", zeta_);
+
+  if (g_ < 0.0) {
+    ROS_ERROR("Invalid design parameter.");
+    throw std::invalid_argument("The designer parameter g received a negative value.");
+  }
+}
+
+void LinearControl::displayControllerInfo() {}
+
+void LinearControl::updateReferenceState(double time) {
+  traj_gen_.updateReferenceState(time);
+}
+
+bool LinearControl::isGoalReached() {
+
+}
+
+}  // namespace trajectory_tracking_control

@@ -2,18 +2,22 @@
   Copyright 2021 - Rafael Barreto
 */
 
+#ifndef TRAJECTORY_TRACKING_CONTROL_LINEAR_CONTROL_HPP_
+#define TRAJECTORY_TRACKING_CONTROL_LINEAR_CONTROL_HPP_
 
 #include <geometry_msgs/Twist.h>
 
 // Angles
 #include <angles/angles.h>
 
+#include <trajectory_tracking_control/ExecuteTrajectoryTrackingAction.h>
+
 // Eigen
 #include <eigen3/Eigen/Core>
 
 #include "trajectory_tracking_control/controller.hpp"
 #include "trajectory_tracking_control/pose_handler.hpp"
-
+#include "trajectory_tracking_control/trajectory_generator.hpp"
 
 using Eigen::MatrixXd;
 
@@ -21,9 +25,21 @@ namespace trajectory_tracking_control {
 
 class LinearControl : public Controller {
  public:
-  explicit LinearControl(tf2_ros::Buffer& tf_buffer, const MatrixXd &ref_states_matrix);
+  LinearControl(TrajectoryGenerator *trajectory_generator,
+                PoseHandler *pose_handler);  // NOLINT
 
-  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
+  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);  // NOLINT
+
+  void updateReferenceState(int n);
+
+  void loadControllerParams();
+
+  void displayControllerInfo();
+
+  void updateReferenceState(double time);
+
+  bool isGoalReached();
+
  private:
   /*
     Reference States Matrix(6, n)
@@ -41,7 +57,7 @@ class LinearControl : public Controller {
   // Current Pose
   geometry_msgs::Pose curr_pose_;
 
-  // Posture Error Matrix (3x1)
+  // Pose Error Matrix (3x1)
   MatrixXd error_;
 
   // Transform to global coordinate matrix (3x3)
@@ -76,7 +92,13 @@ class LinearControl : public Controller {
 
   PoseHandler pose_handler_;
 
-bool constant_gains_{false};
+  bool constant_gains_{false};
+
+  geometry_msgs::Twist ref_cmd_vel_;
+
+  TrajectoryGenerator traj_gen_;
 };
 
 }  // namespace trajectory_tracking_control
+
+#endif  // TRAJECTORY_TRACKING_CONTROL_LINEAR_CONTROL_HPP_

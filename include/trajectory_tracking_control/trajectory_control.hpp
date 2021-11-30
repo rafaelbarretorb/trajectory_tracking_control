@@ -21,6 +21,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 
+// Eigen
+#include <eigen3/Eigen/Core>
 
 // Action
 #include <actionlib/server/simple_action_server.h>
@@ -43,7 +45,7 @@
 #include "trajectory_tracking_control/lyapunov_control.hpp"
 #include "trajectory_tracking_control/model_predictive_control.hpp"
 
-
+using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
 
@@ -74,21 +76,24 @@ class TrajectoryControl {
 
   bool isGoalReached();
 
-  virtual void updateReferenceState(int n);
 
   void computeControlMethod(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
- protected:
+  void feedback();
 
+  void result();
+
+  void loadCommonParams();
+
+  void initializePublishers();
+
+ protected:
   std::string action_name_;
   ros::NodeHandle nh_;
   ExecuteTrajectoryTrackingActionServer action_server_;
 
   ExecuteTrajectoryTrackingFeedback feedback_;
   ExecuteTrajectoryTrackingResult result_;
-
-
-
 
 
   ros::Subscriber pose_sub_;
@@ -102,32 +107,25 @@ class TrajectoryControl {
 
   double goal_distance_;
 
-  double vel_old_{0.0}; // TODO(Rafael) check
-
   bool goal_reached_{false};
 
-  
-
-  bool constant_trajectory_{false};
+  bool const_trajectory_;
 
   double xy_goal_tolerance_;
 
-  // TODO(Rafael) remove and set it from action msg
-  std::string controller_type_;
-
-  TrajectoryGenerator traj_gen_;
-
-  geometry_msgs::Twist ref_cmd_vel_;
+  tf2_ros::Buffer& tf_buffer_;
 
   ControlMethod control_method_;
 
-  Controller *controller_;
+  Controller *controller_{nullptr};
 
   bool goal_processing_fail_;
 
+  // Maximum absolute linear and angular velocities
+  double vel_max_, omega_max_;
 
 
 };
 }  // namespace trajectory_tracking_control
 
-#endif  // TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_
+#endif  // TRAJECTORY_TRACKING_CONTROL_TRAJECTORY_CONTROL_HPP_

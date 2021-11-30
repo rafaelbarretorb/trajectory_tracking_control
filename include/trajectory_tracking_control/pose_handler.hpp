@@ -8,6 +8,7 @@
 #include <ros/ros.h>
 
 // ROS Messages
+#include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
 
@@ -47,6 +48,8 @@ class PoseHandler {
 
   void publishReferencePath(const MatrixXd &ref_states_matrix, const ros::Publisher &pub);
 
+  bool isGoalReached(double xy_goal_tolerance);
+
  protected:
   std::string odom_frame_;
   std::string global_frame_;
@@ -57,6 +60,7 @@ class PoseHandler {
   tf2_ros::TransformListener tfl_;
 
   geometry_msgs::Pose robot_pose_;
+  geometry_msgs::Point goal_position_;
 
 };
 }  // namespace trajectory_tracking_control

@@ -77,4 +77,11 @@ void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix, const 
   pub.publish(path);
 }
 
+bool PoseHandler::isGoalReached(double xy_goal_tolerance) {
+  return (euclideanDistance2D(goal_position_.x,
+                              goal_position_.y,
+                              robot_pose_.position.x,
+                              robot_pose_.position.y) < xy_goal_tolerance) ? true : false;
+}
+
 }  // namespace trajectory_tracking_control
