@@ -64,9 +64,9 @@ include_directories(
 
 add_library(
   trajectory_controller_lib
-  src/controller_node.cpp
+  src/linear_control.cpp
   src/pose_handler.cpp
-  src/controller.cpp
+  src/trajectory_control.cpp
   src/trajectory_generator.cpp
 )
 
@@ -77,7 +77,7 @@ add_dependencies(
 
 add_executable(
   trajectory_controller
-  src/controller_node.cpp
+  src/trajectory_control_node.cpp
 )
 
 target_link_libraries(
