@@ -20,6 +20,16 @@ class Controller {
 
   virtual bool isGoalReached() = 0;
 
+  virtual double getReferenceX() const = 0;
+
+  virtual double getReferenceY() const = 0;
+
+  virtual double getReferenceYaw() const = 0;
+
+  virtual double getReferenceLinearVelocity() const = 0;
+
+  virtual double getReferenceAngularVelocity() const = 0;
+
   virtual ~Controller();
 
 //  protected:
