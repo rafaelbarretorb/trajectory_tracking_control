@@ -7,8 +7,16 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Twist.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 
 #include <eigen3/Eigen/Core>   // MatrixXd
+
+#include <string>
 
 // Service
 #include "trajectory_tracking_control/ComputeReferenceStates.h"
@@ -29,6 +37,14 @@ class TrajectoryGenerator {
 
   void updateReferenceState(double time);
 
+  void publishReferencePath();
+
+  void publishReferencePose();
+
+  void publishReferenceVelocity();
+
+  void initializePublishers();
+
  private:
   void displayConstantTrajectoryInfo(double x_offset, double y_offset, double x_amp, double y_amp, double freq);
   ros::ServiceClient ref_states_srv_;
@@ -36,6 +52,10 @@ class TrajectoryGenerator {
   ros::NodeHandle nh_;
   MatrixXd ref_states_matrix_;
   double sampling_time_;
+
+  ros::Publisher ref_pose_pub_;
+  ros::Publisher ref_path_pub_;
+  ros::Publisher ref_cmd_vel_pub_;
 
   // Current reference velocities
   double vel_ref_, omega_ref_;
@@ -48,6 +68,10 @@ class TrajectoryGenerator {
 
   // Reference Pose State (x, y, yaw)
   MatrixXd q_ref_;
+
+  std::string global_frame_;
+
+  geometry_msgs::Twist ref_cmd_vel_;
 };
 
 }  // namespace trajectory_tracking_control

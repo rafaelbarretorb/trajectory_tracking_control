@@ -14,6 +14,9 @@ TrajectoryGenerator::TrajectoryGenerator(ros::NodeHandle *nodehandle,
                                          sampling_time_(sampling_time) {
   // Reference States Service
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
+
+  // TODO remove hard code
+  global_frame_ = "map";
 }
 
 void TrajectoryGenerator::makeConstantTrajectory() {
@@ -48,6 +51,8 @@ void TrajectoryGenerator::makeConstantTrajectory() {
     ref_states_matrix_(4, i) = -omega*omega*x_amplitude*sin(omega*time);
     ref_states_matrix_(5, i) = -4*omega*omega*y_amplitude*sin(2*omega*time);
   }
+
+  publishReferencePath();
 }
 
 void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
@@ -84,6 +89,8 @@ void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
       ref_states_matrix_(row, col) = ref_states_arr.data[index];
     }
   }
+
+  publishReferencePath();
 }
 
 void TrajectoryGenerator::displayConstantTrajectoryInfo(double x_offset,
@@ -125,15 +132,55 @@ void TrajectoryGenerator::updateReferenceState(double time) {
   vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
   omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
 
-  // Publish reference pose
-  pose_handler_.publishReferencePose(x_ref_, y_ref_, yaw_ref_, ref_pose_pub_);
+  publishReferencePose();
+  publishReferenceVelocity();
+}
 
+void TrajectoryGenerator::publishReferencePath() {
+  geometry_msgs::PoseArray path;
+
+  for (int i = 0; i < ref_states_matrix_.cols(); ++i) {
+    geometry_msgs::Pose pose;
+    pose.position.x = ref_states_matrix_(0, i);
+    pose.position.y = ref_states_matrix_(1, i);
+    path.poses.push_back(pose);
+  }
+
+  ref_path_pub_.publish(path);
+}
+
+
+void TrajectoryGenerator::publishReferencePose() {
+  geometry_msgs::PoseStamped pose;
+  pose.header.frame_id = global_frame_;
+  pose.pose.position.x = x_ref_;
+  pose.pose.position.y = y_ref_;
+  pose.pose.position.z = 0.0;
+
+  tf2::Quaternion quat_tf;
+  geometry_msgs::Quaternion quat_msg;
+
+  quat_tf.setRPY(0, 0, yaw_ref_);
+  quat_tf.normalize();
+  quat_msg = tf2::toMsg(quat_tf);
+
+  // Set orientation
+  pose.pose.orientation = quat_msg;
+  ref_pose_pub_.publish(pose);
+}
+
+void TrajectoryGenerator::publishReferenceVelocity() {
   // Publish reference velocity
   ref_cmd_vel_.linear.x = vel_ref_;
   ref_cmd_vel_.angular.z = omega_ref_;
   ref_cmd_vel_pub_.publish(ref_cmd_vel_);
 }
 
+void TrajectoryGenerator::initializePublishers() {
+  ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
+  ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
+  ref_cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_cmd_vel", 100, true);
+}
 
 
 }  // namespace trajectory_tracking_control
