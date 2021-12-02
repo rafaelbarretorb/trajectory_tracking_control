@@ -42,46 +42,8 @@ double PoseHandler::getYawFromQuaternion(const geometry_msgs::Quaternion & quat_
   return yaw;
 }
 
-void PoseHandler::publishReferencePose(double x, double y, double yaw,
-                                       const ros::Publisher &pub) {
-  geometry_msgs::PoseStamped pose;
-  pose.header.frame_id = global_frame_;
-  pose.pose.position.x = x;
-  pose.pose.position.y = y;
-  pose.pose.position.z = 0.0;
 
-  // TODO(Rafael) make a function
 
-  tf2::Quaternion quat_tf;
-  geometry_msgs::Quaternion quat_msg;
 
-  quat_tf.setRPY(0, 0, yaw);
-  quat_tf.normalize();
-  quat_msg = tf2::toMsg(quat_tf);
-
-  // Set orientation
-  pose.pose.orientation = quat_msg;
-  pub.publish(pose);
-}
-
-void PoseHandler::publishReferencePath(const MatrixXd &ref_states_matrix, const ros::Publisher &pub) {
-  geometry_msgs::PoseArray path;
-
-  for (int i = 0; i < ref_states_matrix.cols(); ++i) {
-    geometry_msgs::Pose pose;
-    pose.position.x = ref_states_matrix(0, i);
-    pose.position.y = ref_states_matrix(1, i);
-    path.poses.push_back(pose);
-  }
-
-  pub.publish(path);
-}
-
-bool PoseHandler::isGoalReached(double xy_goal_tolerance) {
-  return (euclideanDistance2D(goal_position_.x,
-                              goal_position_.y,
-                              robot_pose_.position.x,
-                              robot_pose_.position.y) < xy_goal_tolerance) ? true : false;
-}
 
 }  // namespace trajectory_tracking_control

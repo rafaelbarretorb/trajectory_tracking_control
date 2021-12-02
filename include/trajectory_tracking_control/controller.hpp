@@ -5,6 +5,7 @@
 #ifndef TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_
 #define TRAJECTORY_TRACKING_CONTROL_CONTROLLER_HPP_
 
+#include <utility>
 
 namespace trajectory_tracking_control {
 
@@ -29,6 +30,9 @@ class Controller {
   virtual double getReferenceLinearVelocity() const = 0;
 
   virtual double getReferenceAngularVelocity() const = 0;
+
+  virtual void fillReferencePath(std::vector<std::pair<double, double>> *path) = 0;
+
 
   virtual ~Controller();
 

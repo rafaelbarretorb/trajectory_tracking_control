@@ -1,5 +1,4 @@
 controller_type: "Linear"
-const_reference_trajectory: true
 
 # Constant Reference Trajectory
 x_offset: 1.0

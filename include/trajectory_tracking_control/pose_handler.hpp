@@ -44,12 +44,6 @@ class PoseHandler {
 
   double getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg);
 
-  void publishReferencePose(double x, double y, double yaw, const ros::Publisher &pub);
-
-  void publishReferencePath(const MatrixXd &ref_states_matrix, const ros::Publisher &pub);
-
-  bool isGoalReached(double xy_goal_tolerance);
-
  protected:
   std::string odom_frame_;
   std::string global_frame_;

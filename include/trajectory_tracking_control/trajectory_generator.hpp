@@ -5,7 +5,6 @@
 #ifndef TRAJECTORY_TRACKING_CONTROL_TRAJECTORY_GENERATOR_HPP_  // NOLINT
 #define TRAJECTORY_TRACKING_CONTROL_TRAJECTORY_GENERATOR_HPP_
 
-#include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
@@ -17,6 +16,8 @@
 #include <eigen3/Eigen/Core>   // MatrixXd
 
 #include <string>
+#include <vector>
+#include <utility>
 
 // Service
 #include "trajectory_tracking_control/ComputeReferenceStates.h"
@@ -37,13 +38,7 @@ class TrajectoryGenerator {
 
   void updateReferenceState(double time);
 
-  void publishReferencePath();
-
-  void publishReferencePose();
-
-  void publishReferenceVelocity();
-
-  void initializePublishers();
+  void fillReferencePath(std::vector<std::pair<double, double>> *path);
 
  private:
   void displayConstantTrajectoryInfo(double x_offset, double y_offset, double x_amp, double y_amp, double freq);
@@ -53,9 +48,7 @@ class TrajectoryGenerator {
   MatrixXd ref_states_matrix_;
   double sampling_time_;
 
-  ros::Publisher ref_pose_pub_;
-  ros::Publisher ref_path_pub_;
-  ros::Publisher ref_cmd_vel_pub_;
+
 
   // Current reference velocities
   double vel_ref_, omega_ref_;
@@ -69,9 +62,9 @@ class TrajectoryGenerator {
   // Reference Pose State (x, y, yaw)
   MatrixXd q_ref_;
 
-  std::string global_frame_;
+  
 
-  geometry_msgs::Twist ref_cmd_vel_;
+  
 };
 
 }  // namespace trajectory_tracking_control

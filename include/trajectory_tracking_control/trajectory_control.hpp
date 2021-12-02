@@ -32,6 +32,7 @@
 #include <map>
 #include <string>
 #include <cmath>
+#include <utility>
 
 #include <boost/bind.hpp>
 
@@ -79,13 +80,26 @@ class TrajectoryControl {
 
   void computeControlMethod(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
-  void feedback();
+  void actionFeedback();
 
-  void result();
+  void actionResult();
 
   void loadCommonParams();
 
   void initializePublishers();
+
+  void makeTrajectory(const ExecuteTrajectoryTrackingGoalConstPtr &goal,
+                      TrajectoryGenerator &traj_gen);  // NOLINT
+
+  void initializeController(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
+
+  void updateReferenceState();
+
+  void publishReferencePath();
+
+  void publishReferencePose();
+
+  void publishReferenceVelocity();
 
  protected:
   std::string action_name_;
@@ -95,21 +109,19 @@ class TrajectoryControl {
   ExecuteTrajectoryTrackingFeedback feedback_;
   ExecuteTrajectoryTrackingResult result_;
 
-
   ros::Subscriber pose_sub_;
 
   geometry_msgs::Point goal_position_;
 
+
+  ros::Publisher cmd_vel_pub_;
   ros::Publisher ref_pose_pub_;
   ros::Publisher ref_path_pub_;
-  ros::Publisher cmd_vel_pub_;
   ros::Publisher ref_cmd_vel_pub_;
 
   double goal_distance_;
 
   bool goal_reached_{false};
-
-  bool const_trajectory_;
 
   double xy_goal_tolerance_;
 
@@ -124,7 +136,13 @@ class TrajectoryControl {
   // Maximum absolute linear and angular velocities
   double vel_max_, omega_max_;
 
+  ros::Time zero_time_;
+  ros::Duration delta_t_;
+  double delta_t_sec_;
 
+  geometry_msgs::Twist ref_cmd_vel_;
+
+  std::string global_frame_;
 };
 }  // namespace trajectory_tracking_control
 

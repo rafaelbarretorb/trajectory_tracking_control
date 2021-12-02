@@ -15,6 +15,9 @@
 // Eigen
 #include <eigen3/Eigen/Core>
 
+#include <vector>
+#include <utility>
+
 #include "trajectory_tracking_control/controller.hpp"
 #include "trajectory_tracking_control/pose_handler.hpp"
 #include "trajectory_tracking_control/trajectory_generator.hpp"
@@ -39,6 +42,18 @@ class LinearControl : public Controller {
   void updateReferenceState(double time);
 
   bool isGoalReached();
+
+  double getReferenceX() const;
+
+  double getReferenceY() const;
+
+  double getReferenceYaw() const;
+
+  double getReferenceLinearVelocity() const;
+
+  double getReferenceAngularVelocity() const;
+
+  void fillReferencePath(std::vector<std::pair<double, double>> *path);
 
  private:
   /*
@@ -94,7 +109,7 @@ class LinearControl : public Controller {
 
   bool constant_gains_{false};
 
-  geometry_msgs::Twist ref_cmd_vel_;
+  
 
   TrajectoryGenerator traj_gen_;
 };

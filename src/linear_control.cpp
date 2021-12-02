@@ -14,9 +14,6 @@ LinearControl::LinearControl(TrajectoryGenerator *trajectory_generator,
   q_curr_ = MatrixXd(3, 1);
   tf_to_global_ = MatrixXd(3, 3);
   error_ = MatrixXd(3, 1);
-
-    // Publish reference path
-  pose_handler_.publishReferencePath(ref_states_matrix_, ref_path_pub_);
 }
 
 bool LinearControl::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
@@ -92,14 +89,6 @@ void LinearControl::updateReferenceState(int n) {
   // Reference Velocities
   vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
   omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
-
-  // Publish reference pose
-  pose_handler_.publishReferencePose(x_ref_, y_ref_, yaw_ref_, ref_pose_pub_);
-
-  // Publish reference velocity
-  ref_cmd_vel_.linear.x = vel_ref_;
-  ref_cmd_vel_.angular.z = omega_ref_;
-  ref_cmd_vel_pub_.publish(ref_cmd_vel_);
 }
 
 void LinearControl::loadControllerParams() {
@@ -128,5 +117,11 @@ void LinearControl::updateReferenceState(double time) {
 bool LinearControl::isGoalReached() {
 
 }
+
+
+void LinearControl::fillReferencePath(std::pair<double, double> *path) {
+  traj_gen_.fillReferencePath(path)
+}
+
 
 }  // namespace trajectory_tracking_control
