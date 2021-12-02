@@ -46,7 +46,6 @@
 #include "trajectory_tracking_control/lyapunov_control.hpp"
 #include "trajectory_tracking_control/model_predictive_control.hpp"
 
-using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
 
@@ -67,11 +66,11 @@ using ExecuteTrajectoryTrackingActionServer =
   actionlib::SimpleActionServer<trajectory_tracking_control::ExecuteTrajectoryTrackingAction>;
 
 
-class TrajectoryControl {
+class TrajectoryControlROS {
  public:
-  TrajectoryControl(std::string action_name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf_buffer);  // NOLINT
+  TrajectoryControlROS(std::string action_name, ros::NodeHandle *nodehandle, tf2_ros::Buffer& tf_buffer);  // NOLINT
 
-  ~TrajectoryControl();
+  ~TrajectoryControlROS();
 
   void executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
