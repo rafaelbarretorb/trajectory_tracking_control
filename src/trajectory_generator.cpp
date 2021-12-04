@@ -52,7 +52,6 @@ void TrajectoryGenerator::makeConstantTrajectory() {
     ref_states_matrix_(5, i) = -4*omega*omega*y_amplitude*sin(2*omega*time);
   }
 
-  publishReferencePath();
 }
 
 void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
@@ -90,21 +89,6 @@ void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
     }
   }
 
-  publishReferencePath();
-}
-
-// remove ROS stuff
-void TrajectoryGenerator::displayConstantTrajectoryInfo(double x_offset,
-                                                        double y_offset,
-                                                        double x_amp,
-                                                        double y_amp,
-                                                        double freq) {
-  ROS_INFO("Constant Trajectory parameters: ");
-  ROS_INFO("Offset X: %2f", x_offset);
-  ROS_INFO("Offset Y: %2f", y_offset);
-  ROS_INFO("Amplitude X: %2f", x_amp);
-  ROS_INFO("Amplitude Y: %2f", y_amp);
-  ROS_INFO("Frequency: %2f", freq);
 }
 
 double TrajectoryGenerator::getGoalDistance() const {

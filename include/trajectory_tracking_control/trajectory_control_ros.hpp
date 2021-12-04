@@ -13,13 +13,11 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <nav_msgs/Odometry.h>
 
-
-
 // TF2
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-
+#include <tf2_ros/transform_listener.h>
 
 // Eigen
 #include <eigen3/Eigen/Core>
@@ -36,15 +34,15 @@
 
 #include <boost/bind.hpp>
 
-#include "trajectory_tracking_control/pose_handler.hpp"
-#include "trajectory_tracking_control/trajectory_generator.hpp"
+// #include "trajectory_tracking_control/pose_handler.hpp"
+// #include "trajectory_tracking_control/trajectory_generator.hpp"
 
 #include "trajectory_tracking_control/controller.hpp"
 
 // Control Methods
 #include "trajectory_tracking_control/linear_control.hpp"
-#include "trajectory_tracking_control/lyapunov_control.hpp"
-#include "trajectory_tracking_control/model_predictive_control.hpp"
+// #include "trajectory_tracking_control/lyapunov_control.hpp"
+// #include "trajectory_tracking_control/model_predictive_control.hpp"
 
 
 namespace trajectory_tracking_control {
@@ -85,10 +83,12 @@ class TrajectoryControlROS {
 
   void loadCommonParams();
 
+  void displayControllerInfo();
+
+
   void initializePublishers();
 
-  void makeTrajectory(const ExecuteTrajectoryTrackingGoalConstPtr &goal,
-                      TrajectoryGenerator &traj_gen);  // NOLINT
+  // void makeTrajectory(const ExecuteTrajectoryTrackingGoalConstPtr &goal); 
 
   void initializeController(const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 

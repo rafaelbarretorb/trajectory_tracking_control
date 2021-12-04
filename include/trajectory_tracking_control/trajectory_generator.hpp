@@ -5,9 +5,11 @@
 #ifndef TRAJECTORY_TRACKING_CONTROL_TRAJECTORY_GENERATOR_HPP_  // NOLINT
 #define TRAJECTORY_TRACKING_CONTROL_TRAJECTORY_GENERATOR_HPP_
 
+#include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -28,7 +30,7 @@ namespace trajectory_tracking_control {
 
 class TrajectoryGenerator {
  public:
-  explicit TrajectoryGenerator(ros::NodeHandle *nodehandle, double sampling_time);
+  TrajectoryGenerator(ros::NodeHandle *nodehandle, double sampling_time);
 
   void makeConstantTrajectory();
 
@@ -47,7 +49,6 @@ class TrajectoryGenerator {
   ros::NodeHandle nh_;
   MatrixXd ref_states_matrix_;
   double sampling_time_;
-
 
 
   // Current reference velocities

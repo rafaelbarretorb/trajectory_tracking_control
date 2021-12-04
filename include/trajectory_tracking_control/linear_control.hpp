@@ -5,6 +5,7 @@
 #ifndef TRAJECTORY_TRACKING_CONTROL_LINEAR_CONTROL_HPP_
 #define TRAJECTORY_TRACKING_CONTROL_LINEAR_CONTROL_HPP_
 
+#include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 
 // Angles
@@ -19,8 +20,8 @@
 #include <utility>
 
 #include "trajectory_tracking_control/controller.hpp"
-#include "trajectory_tracking_control/pose_handler.hpp"
-#include "trajectory_tracking_control/trajectory_generator.hpp"
+// #include "trajectory_tracking_control/pose_handler.hpp"
+// #include "trajectory_tracking_control/trajectory_generator.hpp"
 
 using Eigen::MatrixXd;
 
@@ -28,33 +29,34 @@ namespace trajectory_tracking_control {
 
 class LinearControl : public Controller {
  public:
-  LinearControl(TrajectoryGenerator *trajectory_generator,
-                PoseHandler *pose_handler);  // NOLINT
+  LinearControl(ros::NodeHandle *nodehandle,
+                const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
-  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);  // NOLINT
+  // bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);  // NOLINT
 
-  void updateReferenceState(int n);
+  // void updateReferenceState(int n);
 
   void loadControllerParams();
 
   void displayControllerInfo();
 
-  void updateReferenceState(double time);
+  // void updateReferenceState(double time);
 
-  bool isGoalReached();
+  // bool isGoalReached();
 
-  double getReferenceX() const;
+  // double getReferenceX() const;
 
-  double getReferenceY() const;
+  // double getReferenceY() const;
 
-  double getReferenceYaw() const;
+  // double getReferenceYaw() const;
 
-  double getReferenceLinearVelocity() const;
+  // double getReferenceLinearVelocity() const;
 
-  double getReferenceAngularVelocity() const;
+  // double getReferenceAngularVelocity() const;
 
-  void fillReferencePath(std::vector<std::pair<double, double>> *path);
+  // void fillReferencePath(std::vector<std::pair<double, double>> *path);
 
+  void initializeMatrices();
  private:
   /*
     Reference States Matrix(6, n)
@@ -105,13 +107,15 @@ class LinearControl : public Controller {
   // Yaw angle
   double yaw_ref_, yaw_curr_;
 
-  PoseHandler pose_handler_;
+  // PoseHandler pose_handler_;
 
-  bool constant_gains_{false};
+  bool const_gains_{false};
 
-  
+  bool const_trajectory_;
 
-  TrajectoryGenerator traj_gen_;
+  double sampling_time_;
+
+  // TrajectoryGenerator traj_gen_;
 };
 
 }  // namespace trajectory_tracking_control

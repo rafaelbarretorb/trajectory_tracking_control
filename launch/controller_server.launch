@@ -15,5 +15,5 @@
     </node>
 
     <!-- Visualization Tools -->
-    <include file="$(find visualization_tools)/launch/visual_tools.launch" />
+    <!-- <include file="$(find visualization_tools)/launch/visual_tools.launch" /> -->
 </launch>

@@ -3,17 +3,17 @@
 */
 
 
-#include <geometry_msgs/Twist.h>
+// #include <geometry_msgs/Twist.h>
 
-#include "trajectory_tracking_control/controller.hpp"
+// #include "trajectory_tracking_control/controller.hpp"
 
-namespace trajectory_tracking_control {
+// namespace trajectory_tracking_control {
 
-class LyapunovControl : public Controller {
- public:
-  LyapunovControl();
+// class LyapunovControl : public Controller {
+//  public:
+//   LyapunovControl();
 
-  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
-};
+//   bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
+// };
 
-}  // namespace trajectory_tracking_control
+// }  // namespace trajectory_tracking_control

@@ -20,9 +20,9 @@ TrajectoryControlROS::TrajectoryControlROS(std::string action_name,
                                                     false) {
   action_server_.start();
 
-  // loadCommonParams();
+  loadCommonParams();
 
-  // initializePublishers();
+  initializePublishers();
 }
 
 void TrajectoryControlROS::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -76,6 +76,10 @@ void TrajectoryControlROS::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr
   // cmd_vel.linear.x = 0.0;
   // cmd_vel.angular.z = 0.0;
   // cmd_vel_pub_.publish(cmd_vel);
+
+  // just for DEBUG
+  actionResult();
+
 }
 
 void TrajectoryControlROS::computeControlMethod(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -98,51 +102,35 @@ TrajectoryControlROS::~TrajectoryControlROS() {
 
 // void TrajectoryControlROS::actionFeedback() {}
 
-// void TrajectoryControlROS::actionResult() {}
+void TrajectoryControlROS::actionResult() {
+  // result_.distance_traveled_percentage = feedback_.distance_traveled_percentage;
+  result_.distance_traveled_percentage = 100;
+  result_.mission_status = "SUCCEED";
+  ROS_INFO("%s: Succeeded", action_name_.c_str());
+  action_server_.setSucceeded(result_);
+}
 
-// void TrajectoryControlROS::loadCommonParams() {
-//   ros::NodeHandle private_nh("~");
+void TrajectoryControlROS::loadCommonParams() {
+  ros::NodeHandle private_nh("~");
 
-//   private_nh.getParam("vel_max_x", vel_max_);
-//   private_nh.getParam("max_rot_vel", omega_max_);
-//   private_nh.getParam("xy_goal_tolerance", xy_goal_tolerance_);
-// }
+  private_nh.getParam("vel_max_x", vel_max_);
+  private_nh.getParam("max_rot_vel", omega_max_);
+  private_nh.getParam("xy_goal_tolerance", xy_goal_tolerance_);
+}
 
-// void TrajectoryControlROS::initializePublishers() {
-//   cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
-//   ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
-//   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
-//   ref_cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_cmd_vel", 100, true);
-// }
-
-// void TrajectoryControlROS::makeTrajectory(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
-//   if (goal->const_trajectory) {
-//     traj_gen.makeConstantTrajectory();
-//   } else {
-//     // Set goal position
-//     goal_position_.x = goal->path.poses[goal->path.poses.size() - 1].position.x;
-//     goal_position_.y = goal->path.poses[goal->path.poses.size() - 1].position.y;
-
-//     traj_gen.makeTrajectory(goal->path, goal->average_velocity);
-//     goal_distance_ = traj_gen.getGoalDistance();
-//   }
-// }
+void TrajectoryControlROS::initializePublishers() {
+  cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
+  ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
+  ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
+  ref_cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_cmd_vel", 100, true);
+}
 
 void TrajectoryControlROS::initializeController(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
-  // TrajectoryGenerator traj_gen(&nh_, goal->sampling_time);
-
-  // PoseHandler pose_handler(&tf_buffer_);
-
-  // makeTrajectory(goal, traj_gen);
-
   computeControlMethod(goal);
-
-  controller_ = new LinearControl(&nh_);
 
   switch (control_method_) {
     case ControlMethod::LINEAR:
-      // controller_ = new LinearControl(traj_gen, pose_handler);
-      controller_ = new LinearControl(&nh_);
+      controller_ = new LinearControl(&nh_, goal);
       break;
     default:
       ROS_ERROR("No control method");
