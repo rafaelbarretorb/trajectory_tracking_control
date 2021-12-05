@@ -7,6 +7,8 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseArray.h>
 
 // Angles
 #include <angles/angles.h>
@@ -21,42 +23,43 @@
 
 #include "trajectory_tracking_control/controller.hpp"
 // #include "trajectory_tracking_control/pose_handler.hpp"
-// #include "trajectory_tracking_control/trajectory_generator.hpp"
+#include "trajectory_tracking_control/trajectory_generator.hpp"
 
 using Eigen::MatrixXd;
 
 namespace trajectory_tracking_control {
+
+inline float euclideanDistance2D(float x1, float y1, float x2, float y2) {
+  return std::hypot((x1 - x2), (y1 - y2));
+}
 
 class LinearControl : public Controller {
  public:
   LinearControl(ros::NodeHandle *nodehandle,
                 const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
-  // bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);  // NOLINT
-
-  // void updateReferenceState(int n);
+  bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);  // NOLINT
 
   void loadControllerParams();
 
   void displayControllerInfo();
 
-  // void updateReferenceState(double time);
+  void makeTrajectory();
 
-  // bool isGoalReached();
+  void updateReferenceState(double time);
 
-  // double getReferenceX() const;
+  void loadCommonParams();
 
-  // double getReferenceY() const;
+  bool isGoalReached();
 
-  // double getReferenceYaw() const;
+  void initializePublishers();
 
-  // double getReferenceLinearVelocity() const;
-
-  // double getReferenceAngularVelocity() const;
-
-  // void fillReferencePath(std::vector<std::pair<double, double>> *path);
+  void publishReferencePath();
 
   void initializeMatrices();
+
+  void publishReferencePose();
+
  private:
   /*
     Reference States Matrix(6, n)
@@ -115,7 +118,27 @@ class LinearControl : public Controller {
 
   double sampling_time_;
 
-  // TrajectoryGenerator traj_gen_;
+  double avg_velocity_;
+
+  geometry_msgs::Point goal_position_;
+
+  TrajectoryGenerator traj_gen_;
+
+  double goal_distance_;
+
+  geometry_msgs::PoseArray path_;
+
+  bool make_trajectory_;
+
+  ros::NodeHandle nh_;
+
+  double xy_goal_tolerance_;
+
+  ros::Publisher cmd_vel_pub_;
+  ros::Publisher ref_cmd_vel_pub_;
+  ros::Publisher ref_pose_pub_;
+
+  std::string global_frame_;
 };
 
 }  // namespace trajectory_tracking_control

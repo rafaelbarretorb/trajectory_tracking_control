@@ -47,6 +47,7 @@
 
 namespace trajectory_tracking_control {
 
+
 enum class ControlMethod { LINEAR, LYAPUNOV, MPC };
 
 struct ControlMethodMap {
@@ -81,11 +82,6 @@ class TrajectoryControlROS {
 
   void actionResult();
 
-  void loadCommonParams();
-
-  void displayControllerInfo();
-
-
   void initializePublishers();
 
   // void makeTrajectory(const ExecuteTrajectoryTrackingGoalConstPtr &goal); 
@@ -110,19 +106,14 @@ class TrajectoryControlROS {
 
   ros::Subscriber pose_sub_;
 
-  geometry_msgs::Point goal_position_;
 
 
-  ros::Publisher cmd_vel_pub_;
-  ros::Publisher ref_pose_pub_;
-  ros::Publisher ref_path_pub_;
-  ros::Publisher ref_cmd_vel_pub_;
 
   double goal_distance_;
 
   bool goal_reached_{false};
 
-  double xy_goal_tolerance_;
+  
 
   tf2_ros::Buffer& tf_buffer_;
 
@@ -132,8 +123,7 @@ class TrajectoryControlROS {
 
   bool goal_processing_fail_;
 
-  // Maximum absolute linear and angular velocities
-  double vel_max_, omega_max_;
+
 
   ros::Time zero_time_;
   ros::Duration delta_t_;
@@ -141,7 +131,8 @@ class TrajectoryControlROS {
 
   geometry_msgs::Twist ref_cmd_vel_;
 
-  std::string global_frame_;
+  
+
 };
 }  // namespace trajectory_tracking_control
 

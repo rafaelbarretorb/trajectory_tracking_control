@@ -19,10 +19,6 @@ TrajectoryControlROS::TrajectoryControlROS(std::string action_name,
                                                     boost::bind(&TrajectoryControlROS::executeCB, this, _1),
                                                     false) {
   action_server_.start();
-
-  loadCommonParams();
-
-  initializePublishers();
 }
 
 void TrajectoryControlROS::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -37,37 +33,37 @@ void TrajectoryControlROS::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr
   initializeController(goal);
 
   // Publish reference path
-  // publishReferencePath();
+  publishReferencePath();
 
   // ROS Time
   zero_time_ = ros::Time::now();
 
-  // while (ros::ok() && !goal_reached_) {
-  //   if (controller_->isGoalReached()) {
-  //     goal_reached_ = true;
-  //     continue;
-  //   }
+  while (ros::ok() && !goal_reached_) {
+    if (controller_->isGoalReached()) {
+      goal_reached_ = true;
+      continue;
+    }
 
-  //   // Update current reference state x, y, dx, dy, ddx, ddy
-  //   // updateReferenceState();
+    // Update current reference state x, y, dx, dy, ddx, ddy
+    updateReferenceState();
 
-  //   // Publish reference pose and velocity
-  //   // publishReferencePose();
-  //   // publishReferenceVelocity();
+    // Publish reference pose and velocity
+    publishReferencePose();
+    // publishReferenceVelocity();
 
-  //   // Compute the velocity command
-  //   // if (controller_->computeVelocityCommands(cmd_vel)) {
-  //   //   // Publish cmd_vel
-  //   //   cmd_vel_pub_.publish(cmd_vel);
-  //   // } else {
-  //   //   ROS_DEBUG("The controller could not find a valid velocity command.");
-  //   // }
+    // Compute the velocity command
+    // if (controller_->computeVelocityCommands(cmd_vel)) {
+    //   // Publish cmd_vel
+    //   cmd_vel_pub_.publish(cmd_vel);
+    // } else {
+    //   ROS_DEBUG("The controller could not find a valid velocity command.");
+    // }
 
-  //   // Feedback Message
-  //   actionFeedback();
+    // Feedback Message
+    actionFeedback();
 
-  //   rate.sleep();
-  // }
+    rate.sleep();
+  }
 
   // Result Message
   // actionResult();
@@ -79,7 +75,6 @@ void TrajectoryControlROS::executeCB(const ExecuteTrajectoryTrackingGoalConstPtr
 
   // just for DEBUG
   actionResult();
-
 }
 
 void TrajectoryControlROS::computeControlMethod(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
@@ -100,7 +95,7 @@ TrajectoryControlROS::~TrajectoryControlROS() {
   controller_ = nullptr;
 }
 
-// void TrajectoryControlROS::actionFeedback() {}
+void TrajectoryControlROS::actionFeedback() {}
 
 void TrajectoryControlROS::actionResult() {
   // result_.distance_traveled_percentage = feedback_.distance_traveled_percentage;
@@ -110,20 +105,7 @@ void TrajectoryControlROS::actionResult() {
   action_server_.setSucceeded(result_);
 }
 
-void TrajectoryControlROS::loadCommonParams() {
-  ros::NodeHandle private_nh("~");
 
-  private_nh.getParam("vel_max_x", vel_max_);
-  private_nh.getParam("max_rot_vel", omega_max_);
-  private_nh.getParam("xy_goal_tolerance", xy_goal_tolerance_);
-}
-
-void TrajectoryControlROS::initializePublishers() {
-  cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 100, true);
-  ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 100, true);
-  ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
-  ref_cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_cmd_vel", 100, true);
-}
 
 void TrajectoryControlROS::initializeController(const ExecuteTrajectoryTrackingGoalConstPtr &goal) {
   computeControlMethod(goal);
@@ -138,54 +120,23 @@ void TrajectoryControlROS::initializeController(const ExecuteTrajectoryTrackingG
   }
 }
 
-// void TrajectoryControlROS::updateReferenceState() {
-//   // Compute the time difference in seconds
-//   delta_t_ = ros::Time::now() - zero_time_;
-//   delta_t_sec_ = delta_t_.toSec();
+void TrajectoryControlROS::updateReferenceState() {
+  // Compute the time difference in seconds
+  delta_t_ = ros::Time::now() - zero_time_;
+  delta_t_sec_ = delta_t_.toSec();
 
-//   // Update the reference state
-//   controller_->updateReferenceState(delta_t_sec_);
-// }
+  // ROS_WARN("[DEBUG] delta_t_sec_ = %2f", delta_t_sec_);
 
-// void TrajectoryControlROS::publishReferencePath() {
-//   std::vector<std::pair<double, double>> path;
-//   geometry_msgs::PoseArray path_ros;
+  // Update the reference state
+  controller_->updateReferenceState(delta_t_sec_);
+}
 
-//   controller_->fillReferencePath(&path);
+void TrajectoryControlROS::publishReferencePath() {
+  controller_->publishReferencePath();
+}
 
-//   for (const auto &pair : path) {
-//     geometry_msgs::Pose pose;
-//     pose.position.x = pair.first;
-//     pose.position.y = pair.second;
-//     path_ros.poses.push_back(pose);
-//   }
-
-//   ref_path_pub_.publish(path);
-// }
-
-// void TrajectoryControlROS::publishReferencePose() {
-//   geometry_msgs::PoseStamped pose;
-//   pose.header.frame_id = global_frame_;
-//   pose.pose.position.x = controller_->getReferenceX();
-//   pose.pose.position.y = controller_->getReferenceY();
-//   pose.pose.position.z = 0.0;
-
-//   tf2::Quaternion quat_tf;
-//   geometry_msgs::Quaternion quat_msg;
-
-//   quat_tf.setRPY(0, 0, controller_->getReferenceYaw());
-//   quat_tf.normalize();
-//   quat_msg = tf2::toMsg(quat_tf);
-
-//   // Set orientation
-//   pose.pose.orientation = quat_msg;
-//   ref_pose_pub_.publish(pose);
-// }
-
-// void TrajectoryControlROS::publishReferenceVelocity() {
-//   ref_cmd_vel_.linear.x = controller_->getReferenceLinearVelocity();
-//   ref_cmd_vel_.angular.z = controller_->getReferenceAngularVelocity();
-//   ref_cmd_vel_pub_.publish(ref_cmd_vel_);
-// }
+void TrajectoryControlROS::publishReferencePose() {
+  controller_->publishReferencePose();
+}
 
 }  // namespace trajectory_tracking_control

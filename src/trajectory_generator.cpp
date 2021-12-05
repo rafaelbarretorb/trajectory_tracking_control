@@ -15,8 +15,8 @@ TrajectoryGenerator::TrajectoryGenerator(ros::NodeHandle *nodehandle,
   // Reference States Service
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 
-  // TODO remove hard code
-  global_frame_ = "map";
+  //
+  initializePublishers();
 }
 
 void TrajectoryGenerator::makeConstantTrajectory() {
@@ -34,7 +34,7 @@ void TrajectoryGenerator::makeConstantTrajectory() {
   private_nh.getParam("y_amplitude", y_amplitude);
   private_nh.getParam("frequency", freq);
 
-  displayConstantTrajectoryInfo(x_offset, y_offset, x_amplitude, y_amplitude, freq);
+  //displayConstantTrajectoryInfo(x_offset, y_offset, x_amplitude, y_amplitude, freq);
 
   double omega = 2*M_PI*freq;
   int m = 1/(freq*sampling_time_);
@@ -51,7 +51,6 @@ void TrajectoryGenerator::makeConstantTrajectory() {
     ref_states_matrix_(4, i) = -omega*omega*x_amplitude*sin(omega*time);
     ref_states_matrix_(5, i) = -4*omega*omega*y_amplitude*sin(2*omega*time);
   }
-
 }
 
 void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
@@ -76,8 +75,6 @@ void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
     ROS_ERROR("Failed to call Reference States Service");
   }
 
-  ROS_WARN("DEBUG: matrix_rows_size: %d", matrix_rows_size);
-  ROS_WARN("DEBUG: matrix_columns_size: %d", matrix_columns_size);
   // Initialize the matrix
   ref_states_matrix_ = MatrixXd(matrix_rows_size, matrix_columns_size);
 
@@ -95,8 +92,7 @@ double TrajectoryGenerator::getGoalDistance() const {
   return goal_distance_;
 }
 
-void TrajectoryGenerator::updateReferenceState(double time) {
-  int n = round(time/(sampling_time_));
+void TrajectoryGenerator::updateReferenceState(int n) {
   if (n > ref_states_matrix_.cols() - 1) {
     n = ref_states_matrix_.cols() - 1;
   }
@@ -107,25 +103,50 @@ void TrajectoryGenerator::updateReferenceState(double time) {
   dy_ref_ = ref_states_matrix_(3, n);
   ddx_ref_ = ref_states_matrix_(4, n);
   ddy_ref_ = ref_states_matrix_(5, n);
-
-  yaw_ref_ = atan2(dy_ref_, dx_ref_);
-
-  // Reference Pose State
-  q_ref_ << x_ref_, y_ref_, yaw_ref_;
-
-  // Reference Velocities
-  vel_ref_ = sqrt(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
-  omega_ref_ = (dx_ref_*ddy_ref_ - dy_ref_*ddx_ref_)/(dx_ref_*dx_ref_ + dy_ref_*dy_ref_);
 }
 
+void TrajectoryGenerator::publishReferencePath() {
+  geometry_msgs::PoseArray path;
 
-void TrajectoryGenerator::fillReferencePath(std::vector<std::pair<double, double>> *path) {
+  int n = ref_states_matrix_.cols();
+
   for (int i = 0; i < ref_states_matrix_.cols(); ++i) {
-    std::pair<double, double> p;
-    p.first = ref_states_matrix_(0, i);
-    p.second = ref_states_matrix_(1, i);
-    (*path).push_back(p);
+    geometry_msgs::Pose pose;
+    pose.position.x = ref_states_matrix_(0, i);
+    pose.position.y = ref_states_matrix_(1, i);
+    path.poses.push_back(pose);
   }
+
+  ref_path_pub_.publish(path);
+}
+
+double TrajectoryGenerator::getReferenceX() const {
+  return x_ref_;
+}
+
+double TrajectoryGenerator::getReferenceY() const {
+  return y_ref_;
+}
+
+double TrajectoryGenerator::getReferenceDX() const {
+  return dx_ref_;
+}
+
+double TrajectoryGenerator::getReferenceDY() const {
+  return dy_ref_;
+}
+
+double TrajectoryGenerator::getReferenceDDX() const {
+  return ddx_ref_;
+}
+
+double TrajectoryGenerator::getReferenceDDY() const {
+  return ddy_ref_;
+}
+
+void TrajectoryGenerator::initializePublishers() {
+  
+  ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
 }
 
 

@@ -67,7 +67,7 @@ add_library(
   src/linear_control.cpp
   # src/pose_handler.cpp
   src/trajectory_control_ros.cpp
-  # src/trajectory_generator.cpp
+  src/trajectory_generator.cpp
 )
 
 add_dependencies(
