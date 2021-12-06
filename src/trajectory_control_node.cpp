@@ -4,7 +4,7 @@
 
 #include <tf2_ros/transform_listener.h>
 
-#include "trajectory_tracking_control/trajectory_control_ros.hpp"
+#include "trajectory_tracking_control/trajectory_control.hpp"
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "trajectory_controller");
@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
   tf2_ros::Buffer buffer;
   tf2_ros::TransformListener tf(buffer);
 
-  trajectory_tracking_control::TrajectoryControlROS trajectory_control("trajectory_tracking_control", &nh, buffer);
+  trajectory_tracking_control::TrajectoryControl trajectory_control("trajectory_tracking_control", &nh, &buffer);
 
   ros::spin();
   return 0;

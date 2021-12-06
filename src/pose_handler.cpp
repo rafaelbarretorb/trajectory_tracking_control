@@ -9,14 +9,14 @@ namespace trajectory_tracking_control {
 
 // TODO(Rafael) tfl_??
 
-PoseHandler::PoseHandler(tf2_ros::Buffer* tf) : tf_(tf), tfl_(*tf_) {
+PoseHandler::PoseHandler(ros::NodeHandle *nodehandle, tf2_ros::Buffer* tf) : tf_(tf), nh_(*nodehandle)  {
   // TODO(Rafael) remove
   odom_frame_ = "odom";
   global_frame_ = "map";
   robot_base_frame_ = "base_link";
 }
 
-const geometry_msgs::Pose &PoseHandler::getRobotPose() {
+geometry_msgs::Pose PoseHandler::getRobotPose() {
   geometry_msgs::TransformStamped transformStamped;
   if (tf_->canTransform(odom_frame_, global_frame_, ros::Time(0))) {
     transformStamped = tf_->lookupTransform(odom_frame_, robot_base_frame_, ros::Time(0));

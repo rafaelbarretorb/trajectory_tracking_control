@@ -35,12 +35,11 @@ using Eigen::MatrixXd;
 namespace trajectory_tracking_control {
 
 
-
 class PoseHandler {
  public:
-  explicit PoseHandler(tf2_ros::Buffer* tf);
+  PoseHandler(ros::NodeHandle *nodehandle, tf2_ros::Buffer* tf);
 
-  const geometry_msgs::Pose &getRobotPose();
+  geometry_msgs::Pose getRobotPose();
 
   double getYawFromQuaternion(const geometry_msgs::Quaternion & quat_msg);
 
@@ -51,10 +50,12 @@ class PoseHandler {
 
   // TF2
   tf2_ros::Buffer* tf_;
-  tf2_ros::TransformListener tfl_;
+  //tf2_ros::TransformListener tfl_;
 
   geometry_msgs::Pose robot_pose_;
   geometry_msgs::Point goal_position_;
+
+  ros::NodeHandle nh_;
 
 };
 }  // namespace trajectory_tracking_control

@@ -7,17 +7,20 @@
 namespace trajectory_tracking_control {
 
 LinearControl::LinearControl(ros::NodeHandle *nodehandle,
+                             tf2_ros::Buffer * tf_buffer,
                              const ExecuteTrajectoryTrackingGoalConstPtr &goal) :
                              nh_(*nodehandle),
+                             tf_buffer_(tf_buffer),
                              const_trajectory_(goal->const_trajectory),
                              path_(goal->path),
                              make_trajectory_(goal->make_trajectory),
                              avg_velocity_(goal->average_velocity),
                              sampling_time_(goal->sampling_time),
-                             traj_gen_(&nh_, sampling_time_) {
+                             traj_gen_(&nh_, sampling_time_),
+                             pose_handler_(&nh_, tf_buffer_) {
   // TODO(Rafael) remove hard code
   global_frame_ = "map";
-  
+
   loadControllerParams();
 
   initializePublishers();
@@ -30,64 +33,62 @@ LinearControl::LinearControl(ros::NodeHandle *nodehandle,
 }
 
 bool LinearControl::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
-  // double omega;
-  // double vel;
+  double omega;
+  double vel;
 
-  // // Update robot pose
-  // curr_pose_ = pose_handler_.getRobotPose();
-  // yaw_curr_ = pose_handler_.getYawFromQuaternion(curr_pose_.orientation);
-  // q_curr_ << curr_pose_.position.x, curr_pose_.position.y, yaw_curr_;
+  // Update robot pose
+  curr_pose_ = pose_handler_.getRobotPose();
+  yaw_curr_ = pose_handler_.getYawFromQuaternion(curr_pose_.orientation);
+  q_curr_ << curr_pose_.position.x, curr_pose_.position.y, yaw_curr_;
 
+  // Transform to global coordinate
+  tf_to_global_ <<  cos(yaw_curr_), sin(yaw_curr_), 0.0,
+                   -sin(yaw_curr_), cos(yaw_curr_), 0.0,
+                               0.0,            0.0, 1.0;
 
-  // // Transform to global coordinate
-  // tf_to_global_ << cos(yaw_curr_), sin(yaw_curr_), 0.0,
-  //                  -sin(yaw_curr_), cos(yaw_curr_), 0.0,
-  //                  0.0, 0.0, 1.0;
+  // Pose Error
+  error_ = tf_to_global_ * (q_ref_ - q_curr_);
 
-  // // Pose Error
-  // error_ = tf_to_global_ * (q_ref_ - q_curr_);
+  // Wrap to PI yaw error
+  error_(2, 0) = angles::normalize_angle(error_(2, 0));
 
-  // // Wrap to PI yaw error
-  // error_(2, 0) = angles::normalize_angle(error_(2, 0));
+  // Control
+  error_x_ = error_(0, 0);
+  error_y_ = error_(1, 0);
+  error_yaw_ = error_(2, 0);
 
-  // // Control
-  // error_x_ = error_(0, 0);
-  // error_y_ = error_(1, 0);
-  // error_yaw_ = error_(2, 0);
+  if (!const_gains_) {
+    // Variable gains
+    k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
+    k_y_ = g_*vel_ref_;
+    k_yaw_ = k_x_;
+  }
 
-  // if (!const_gains_) {
-  //   // Variable gains
-  //   k_x_ = 2*zeta_*sqrt(omega_ref_*omega_ref_ + g_*vel_ref_*vel_ref_);
-  //   k_y_ = g_*vel_ref_;
-  //   k_yaw_ = k_x_;
-  // }
+  // Compute Velocities
+  vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
+  omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
 
-  // // Compute Velocities
-  // vel = vel_ref_*cos(error_yaw_) + k_x_*error_x_;
-  // omega = omega_ref_ + k_y_*error_y_ + k_yaw_*error_yaw_;
+  // Ensure that the angular velocity does not exceed the maximum allowed
+  if (fabs(omega) > omega_max_) {
+    omega = copysign(omega_max_, omega);
+  }
 
-  // // Ensure that the angular velocity does not exceed the maximum allowed
-  // if (fabs(omega) > omega_max_) {
-  //   omega = copysign(omega_max_, omega);
-  // }
+  if (vel < 0.0) {
+    vel = 0.0;
+  }
 
-  // if (vel < 0.0) {
-  //   vel = 0.0;
-  // }
+  // Ensure that the linear velocity does not exceed the maximum allowed
+  if (vel > vel_max_) {
+    vel = vel_max_;
+  }
 
-  // // Ensure that the linear velocity does not exceed the maximum allowed
-  // if (vel > vel_max_) {
-  //   vel = vel_max_;
-  // }
-
-  // cmd_vel.linear.x = vel;
-  // cmd_vel.angular.z = omega;
+  cmd_vel.linear.x = vel;
+  cmd_vel.angular.z = omega;
 
   return true;
 }
 
 void LinearControl::makeTrajectory() {
-
   if (const_trajectory_) {
     traj_gen_.makeConstantTrajectory();
   } else {
@@ -203,14 +204,13 @@ bool LinearControl::isGoalReached() {
                               curr_pose_.position.y) < xy_goal_tolerance_) ? true : false;
 }
 
-// void TrajectoryControlROS::publishReferenceVelocity() {
-//   ref_cmd_vel_.linear.x = controller_->getReferenceLinearVelocity();
-//   ref_cmd_vel_.angular.z = controller_->getReferenceAngularVelocity();
-//   ref_cmd_vel_pub_.publish(ref_cmd_vel_);
-// }
+void LinearControl::publishReferenceVelocity() {
+  ref_cmd_vel_.linear.x = vel_ref_;
+  ref_cmd_vel_.angular.z = omega_ref_;
+  ref_cmd_vel_pub_.publish(ref_cmd_vel_);
+}
 
 void LinearControl::initializePublishers() {
-  cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10, true);
   ref_cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_cmd_vel", 10, true);
   ref_pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose", 10, true);
 }

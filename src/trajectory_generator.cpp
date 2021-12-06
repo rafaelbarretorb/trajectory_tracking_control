@@ -15,7 +15,6 @@ TrajectoryGenerator::TrajectoryGenerator(ros::NodeHandle *nodehandle,
   // Reference States Service
   ref_states_srv_ = nh_.serviceClient<trajectory_tracking_control::ComputeReferenceStates>("ref_states_srv");
 
-  //
   initializePublishers();
 }
 
@@ -33,8 +32,6 @@ void TrajectoryGenerator::makeConstantTrajectory() {
   private_nh.getParam("x_amplitude", x_amplitude);
   private_nh.getParam("y_amplitude", y_amplitude);
   private_nh.getParam("frequency", freq);
-
-  //displayConstantTrajectoryInfo(x_offset, y_offset, x_amplitude, y_amplitude, freq);
 
   double omega = 2*M_PI*freq;
   int m = 1/(freq*sampling_time_);
@@ -85,24 +82,23 @@ void TrajectoryGenerator::makeTrajectory(const geometry_msgs::PoseArray &path,
       ref_states_matrix_(row, col) = ref_states_arr.data[index];
     }
   }
-
 }
 
 double TrajectoryGenerator::getGoalDistance() const {
   return goal_distance_;
 }
 
-void TrajectoryGenerator::updateReferenceState(int n) {
-  if (n > ref_states_matrix_.cols() - 1) {
-    n = ref_states_matrix_.cols() - 1;
+void TrajectoryGenerator::updateReferenceState(int discrete_time) {
+  if (discrete_time > ref_states_matrix_.cols() - 1) {
+    discrete_time = ref_states_matrix_.cols() - 1;
   }
 
-  x_ref_ = ref_states_matrix_(0, n);
-  y_ref_ = ref_states_matrix_(1, n);
-  dx_ref_ = ref_states_matrix_(2, n);
-  dy_ref_ = ref_states_matrix_(3, n);
-  ddx_ref_ = ref_states_matrix_(4, n);
-  ddy_ref_ = ref_states_matrix_(5, n);
+  x_ref_ = ref_states_matrix_(0, discrete_time);
+  y_ref_ = ref_states_matrix_(1, discrete_time);
+  dx_ref_ = ref_states_matrix_(2, discrete_time);
+  dy_ref_ = ref_states_matrix_(3, discrete_time);
+  ddx_ref_ = ref_states_matrix_(4, discrete_time);
+  ddy_ref_ = ref_states_matrix_(5, discrete_time);
 }
 
 void TrajectoryGenerator::publishReferencePath() {
@@ -145,9 +141,7 @@ double TrajectoryGenerator::getReferenceDDY() const {
 }
 
 void TrajectoryGenerator::initializePublishers() {
-  
   ref_path_pub_ = nh_.advertise<geometry_msgs::PoseArray>("reference_planner", 100, true);
 }
-
 
 }  // namespace trajectory_tracking_control

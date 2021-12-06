@@ -65,8 +65,8 @@ include_directories(
 add_library(
   trajectory_controller_lib
   src/linear_control.cpp
-  # src/pose_handler.cpp
-  src/trajectory_control_ros.cpp
+  src/pose_handler.cpp
+  src/trajectory_control.cpp
   src/trajectory_generator.cpp
 )
 

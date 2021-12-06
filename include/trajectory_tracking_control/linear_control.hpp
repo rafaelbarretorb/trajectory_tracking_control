@@ -18,11 +18,12 @@
 // Eigen
 #include <eigen3/Eigen/Core>
 
+#include <string>
 #include <vector>
 #include <utility>
 
 #include "trajectory_tracking_control/controller.hpp"
-// #include "trajectory_tracking_control/pose_handler.hpp"
+#include "trajectory_tracking_control/pose_handler.hpp"
 #include "trajectory_tracking_control/trajectory_generator.hpp"
 
 using Eigen::MatrixXd;
@@ -36,6 +37,7 @@ inline float euclideanDistance2D(float x1, float y1, float x2, float y2) {
 class LinearControl : public Controller {
  public:
   LinearControl(ros::NodeHandle *nodehandle,
+                tf2_ros::Buffer * tf_buffer,
                 const ExecuteTrajectoryTrackingGoalConstPtr &goal);
 
   bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);  // NOLINT
@@ -59,6 +61,8 @@ class LinearControl : public Controller {
   void initializeMatrices();
 
   void publishReferencePose();
+
+  void publishReferenceVelocity();
 
  private:
   /*
@@ -110,8 +114,6 @@ class LinearControl : public Controller {
   // Yaw angle
   double yaw_ref_, yaw_curr_;
 
-  // PoseHandler pose_handler_;
-
   bool const_gains_{false};
 
   bool const_trajectory_;
@@ -124,6 +126,8 @@ class LinearControl : public Controller {
 
   TrajectoryGenerator traj_gen_;
 
+  PoseHandler pose_handler_;
+
   double goal_distance_;
 
   geometry_msgs::PoseArray path_;
@@ -134,11 +138,14 @@ class LinearControl : public Controller {
 
   double xy_goal_tolerance_;
 
-  ros::Publisher cmd_vel_pub_;
   ros::Publisher ref_cmd_vel_pub_;
   ros::Publisher ref_pose_pub_;
 
   std::string global_frame_;
+
+  geometry_msgs::Twist ref_cmd_vel_;
+
+  tf2_ros::Buffer *tf_buffer_;
 };
 
 }  // namespace trajectory_tracking_control

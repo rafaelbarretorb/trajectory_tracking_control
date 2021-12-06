@@ -38,22 +38,26 @@ class TrajectoryGenerator {
 
   double getGoalDistance() const;
 
-  void updateReferenceState(int n);
+  void updateReferenceState(int discrete_time);
 
   void publishReferencePath();
 
   double getReferenceX() const;
+
   double getReferenceY() const;
+
   double getReferenceDX() const;
+
   double getReferenceDY() const;
+
   double getReferenceDDX() const;
+
   double getReferenceDDY() const;
 
   void initializePublishers();
 
  private:
-  
-  //void displayConstantTrajectoryInfo(double x_offset, double y_offset, double x_amp, double y_amp, double freq);
+
   ros::ServiceClient ref_states_srv_;
   double goal_distance_;
   ros::NodeHandle nh_;
@@ -64,7 +68,6 @@ class TrajectoryGenerator {
   double x_ref_, y_ref_, dx_ref_, dy_ref_, ddx_ref_, ddy_ref_;
 
   ros::Publisher ref_path_pub_;
-  
 };
 
 }  // namespace trajectory_tracking_control
