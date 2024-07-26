@@ -1,0 +1,21 @@
+linear_controller:
+  time:
+    sampling: 0.05
+    duration: 30
+  kinematics:
+    acc_lin_max: 0.25
+    acc_ang_max: 0.5236 # pi/6 
+    v_max: 0.50
+    w_max: 0.5236 # pi/6
+  start_pose:
+    x: 1.1
+    y: 0.8
+    phi: 0.0
+  control_design:
+    const_gains: False
+    zeta: 0.9
+    g: 85.0
+    k_x: 1.0
+    k_y: 1.0 
+    k_phi: 1.0
+  enable_noise: True
